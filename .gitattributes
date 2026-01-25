@@ -1,0 +1,76 @@
+# 自动处理文本文件
+* text=auto
+
+# 源码文件 - 强制使用 LF（确保跨平台一致性）
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.vue text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.sass text eol=lf
+*.less text eol=lf
+*.html text eol=lf
+*.xml text eol=lf
+
+# Python 文件
+*.py text eol=lf
+
+# 配置文件
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.env text eol=lf
+*.env.* text eol=lf
+
+# 文档文件
+*.md text eol=lf
+*.txt text eol=lf
+*.rdoc text eol=lf
+LICENSE text eol=lf
+
+# 脚本文件（必须使用 LF，否则在 Linux/Mac 无法执行）
+*.sh text eol=lf
+*.bash text eol=lf
+
+# 特定项目文件
+package.json text eol=lf
+package-lock.json text eol=lf
+tsconfig.json text eol=lf
+vite.config.js text eol=lf
+webpack.config.js text eol=lf
+
+# Windows 批处理文件 - 保持 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制文件 - 不进行任何转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.mp4 binary
+*.mp3 binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary
+*.rar binary
+*.exe binary
+*.dll binary
+
+# Git 相关文件
+.gitattributes text eol=lf
+.gitignore text eol=lf
+
+# 特定编辑器配置文件
+.editorconfig text eol=lf
+.prettierrc text eol=lf
+.eslintrc text eol=lf
