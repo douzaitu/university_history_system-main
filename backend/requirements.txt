@@ -1,0 +1,23 @@
+# backend/requirements.txt
+# 核心框架
+Django==5.2.8
+djangorestframework==3.16.1
+django-cors-headers==4.9.0
+
+# 数据库和外部服务
+neo4j==6.0.3
+requests==2.32.5
+python-dotenv==1.1.0
+
+# 数据处理
+pandas==2.3.3
+openpyxl==3.1.5
+ollama==0.6.1
+
+# 图像处理
+Pillow==12.0.0
+
+# Django基础依赖（通常会自动安装）
+asgiref==3.10.0
+sqlparse==0.5.3
+tzdata==2025.2

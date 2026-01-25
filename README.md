@@ -18,6 +18,57 @@ Node.js 14+
 Neo4j Desktop
 Git
 
+## 安装依赖
+
+后端依赖：
+
+# backend/requirements.txt
+
+# 核心框架
+
+Django==5.2.8
+djangorestframework==3.16.1
+django-cors-headers==4.9.0
+
+# 数据库和外部服务
+
+neo4j==6.0.3
+requests==2.32.5
+python-dotenv==1.1.0
+
+# 数据处理
+
+pandas==2.3.3
+openpyxl==3.1.5
+ollama==0.6.1
+
+# 图像处理
+
+Pillow==12.0.0
+
+# Django基础依赖（通常会自动安装）
+
+asgiref==3.10.0
+sqlparse==0.5.3
+tzdata==2025.2
+
+前端依赖：
+
+# 核心框架：
+
+Vue 3 (vue@3.5.26)
+Vue Router 4 (vue-router@4.6.4)
+
+# 构建工具：
+
+Vite (vite@7.3.0)
+@vitejs/plugin-vue (@vitejs/plugin-vue@6.0.3)
+
+# 主要库：
+
+Axios (axios@1.13.2)
+ECharts (echarts@6.0.0)
+
 ## 项目结构
 
 university_history_system/
