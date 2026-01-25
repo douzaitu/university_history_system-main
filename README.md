@@ -24,7 +24,6 @@ university_history_system/
 ├── backend/ # Django后端
 ├── frontend/ # Vue前端
 ├── reg5.py # 知识图谱导入脚本
-├── venv # 虚拟环境
 └── README.md # 本文档
 
 ## 安装的依赖
