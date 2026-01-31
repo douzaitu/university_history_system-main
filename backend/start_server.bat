@@ -2,11 +2,22 @@
 echo Starting University History System Server...
 echo.
 
-:: Change to correct directory if needed
-cd /d "E:\Projects\SchoolHistory\university_history_system\backend"
+:: Change to the directory where this script is located
+cd /d "%~dp0"
 
 echo Activating virtual environment...
-call ..\venv\Scripts\activate.bat
+if exist "..\.venv\Scripts\activate.bat" (
+    call "..\.venv\Scripts\activate.bat"
+) else (
+    echo Virtual environment not found at ..\.venv
+    pause
+    exit /b
+)
+
+echo Starting Django Server...
+python manage.py runserver
+
+pause
 
 if errorlevel 1 (
     echo ERROR: Cannot activate virtual environment

@@ -307,79 +307,74 @@ def relationship_management(request):
 def knowledge_graph_teacher(request, teacher_name):
     """获取教师知识图谱数据 - 新功能"""
     try:
-        # Neo4j连接配置 - 请确认密码是否正确
-        NEO4J_URI = "bolt://localhost:7687"
-        NEO4J_USERNAME = "neo4j"
-        NEO4J_PASSWORD = "12345678"  # 请确认这是您的Neo4j密码
+        from .neo4j_db import Neo4jConnection
         
-        driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USERNAME, NEO4J_PASSWORD))
+        # 查询教师的关系网络
+        query = """
+        MATCH (teacher:Entity {name: $teacher_name})-[r:RELATION]->(target:Entity)
+        RETURN teacher.name as source, r.type as relation, target.name as target, 'outgoing' as direction
+        UNION
+        MATCH (source:Entity)-[r:RELATION]->(teacher:Entity {name: $teacher_name})
+        RETURN source.name as source, r.type as relation, teacher.name as target, 'incoming' as direction
+        """
         
-        with driver.session() as session:
-            # 查询教师的关系网络
-            query = """
-            MATCH (teacher:Entity {name: $teacher_name})-[r:RELATION]->(target:Entity)
-            RETURN teacher.name as source, r.type as relation, target.name as target, 'outgoing' as direction
-            UNION
-            MATCH (source:Entity)-[r:RELATION]->(teacher:Entity {name: $teacher_name})
-            RETURN source.name as source, r.type as relation, teacher.name as target, 'incoming' as direction
-            """
+        result = Neo4jConnection.query(query, {"teacher_name": teacher_name})
+        
+        if result is None:
+             return Response({'error': 'Neo4j connection failed'}, status=500)
+
+        nodes = []
+        edges = []
+        node_set = set()
+        
+        # 添加中心节点（教师）
+        nodes.append({
+            'id': teacher_name,
+            'label': teacher_name,
+            'type': 'teacher',
+            'size': 25
+        })
+        node_set.add(teacher_name)
+        
+        for record in result:
+            source = record['source']
+            target = record['target']
+            relation = record['relation']
+            direction = record['direction']
             
-            result = session.run(query, teacher_name=teacher_name)
-            
-            nodes = []
-            edges = []
-            node_set = set()
-            
-            # 添加中心节点（教师）
-            nodes.append({
-                'id': teacher_name,
-                'label': teacher_name,
-                'type': 'teacher',
-                'size': 25
-            })
-            node_set.add(teacher_name)
-            
-            for record in result:
-                source = record['source']
-                target = record['target']
-                relation = record['relation']
-                direction = record['direction']
-                
-                # 添加源节点
-                if source not in node_set:
-                    nodes.append({
-                        'id': source,
-                        'label': source,
-                        'type': 'entity',
-                        'size': 15
-                    })
-                    node_set.add(source)
-                
-                # 添加目标节点
-                if target not in node_set:
-                    nodes.append({
-                        'id': target,
-                        'label': target,
-                        'type': 'entity',
-                        'size': 15
-                    })
-                    node_set.add(target)
-                
-                # 添加边
-                edges.append({
-                    'source': source,
-                    'target': target,
-                    'label': relation,
-                    'direction': direction
+            # 添加源节点
+            if source not in node_set:
+                nodes.append({
+                    'id': source,
+                    'label': source,
+                    'type': 'entity',
+                    'size': 15
                 })
+                node_set.add(source)
             
-            driver.close()
+            # 添加目标节点
+            if target not in node_set:
+                nodes.append({
+                    'id': target,
+                    'label': target,
+                    'type': 'entity',
+                    'size': 15
+                })
+                node_set.add(target)
             
-            return Response({
-                'teacher': teacher_name,
-                'nodes': nodes,
-                'edges': edges
+            # 添加边
+            edges.append({
+                'source': source,
+                'target': target,
+                'label': relation,
+                'direction': direction
             })
+        
+        return Response({
+            'teacher': teacher_name,
+            'nodes': nodes,
+            'edges': edges
+        })
             
     except Exception as e:
         return Response({'error': str(e)}, status=500)
@@ -391,22 +386,19 @@ def knowledge_graph_search(request):
     query_param = request.GET.get('q', '')  # 重命名变量避免冲突
     
     try:
-        NEO4J_URI = "bolt://localhost:7687"
-        NEO4J_USERNAME = "neo4j"
-        NEO4J_PASSWORD = "12345678"
+        from .neo4j_db import Neo4jConnection
         
-        driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USERNAME, NEO4J_PASSWORD))
+        result = Neo4jConnection.query(
+            "MATCH (n:Entity) WHERE n.name CONTAINS $query RETURN n.name as name LIMIT 10",
+            {"query": query_param}
+        )
         
-        with driver.session() as session:
-            result = session.run(
-                "MATCH (n:Entity) WHERE n.name CONTAINS $query RETURN n.name as name LIMIT 10",
-                {"query": query_param}  # 使用字典传递参数
-            )
+        if result is None:
+            return Response({'error': 'Neo4j connection failed'}, status=500)
             
-            teachers = [record['name'] for record in result]
-            driver.close()
-            
-            return Response({'teachers': teachers})
+        teachers = [record['name'] for record in result]
+        
+        return Response({'teachers': teachers})
             
     except Exception as e:
         return Response({'error': str(e)}, status=500)
