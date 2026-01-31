@@ -1,6 +1,6 @@
 import request from "./request";
 
-// 知识图谱数据API
+// 知识图谱数据API（全量）
 export function getKnowledgeGraphData() {
   return request({
     url: "/knowledge-graph/",
@@ -8,7 +8,24 @@ export function getKnowledgeGraphData() {
   });
 }
 
-// 实体搜索API
+// 搜索教师（Neo4j实时搜索）
+export function searchTeachers(query) {
+  return request({
+    url: "/kg/search/",
+    method: "get",
+    params: { q: query }
+  });
+}
+
+// 获取特定教师的图谱（Neo4j）
+export function getTeacherGraph(teacherName) {
+  return request({
+    url: `/kg/teacher/${encodeURIComponent(teacherName)}/`,
+    method: "get"
+  });
+}
+
+// 实体搜索API（SQLite）
 export function searchEntities(keyword) {
   return request({
     url: "/entities/",

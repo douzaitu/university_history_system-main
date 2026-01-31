@@ -20,3 +20,5 @@ yarn-error.log*
 # 构建输出
 dist/
 build/
+# NPM Cache
+local_npm_cache/

@@ -98,6 +98,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
+import { searchTeachers, getTeacherGraph } from "../api/knowledgeGraph";
 
 // 动态导入echarts
 let echarts = null;
@@ -151,21 +152,12 @@ const handleSearchInput = async () => {
 
   try {
     console.log("开始搜索:", query);
-
-    const response = await fetch(
-      `http://localhost:8000/api/kg/search/?q=${encodeURIComponent(query)}`,
-    );
-
-    console.log("搜索响应状态:", response.status);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
+    
+    // 使用封装的API替代直接fetch
+    const data = await searchTeachers(query);
     console.log("搜索返回数据:", data);
 
-    // 确保teachers数组存在
+    // axios返回的data就是响应体，不需要再.json()
     searchResults.value = data.teachers || [];
     console.log("处理后结果:", searchResults.value);
   } catch (error) {
@@ -188,19 +180,11 @@ const loadTeacherGraph = async (teacherName) => {
     errorMessage.value = "";
     console.log("开始加载教师图谱:", teacherName);
 
-    const response = await fetch(
-      `http://localhost:8000/api/kg/teacher/${encodeURIComponent(teacherName)}/`,
-    );
+    // 使用封装的API替代直接fetch
+    const data = await getTeacherGraph(teacherName);
+    console.log("图谱数据:", data);
 
-    console.log("图谱API响应状态:", response.status);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log("图谱API返回数据:", data);
-
+    // 处理数据 (axios自动处理了JSON解析)
     if (data.nodes && data.edges) {
       graphData.value = data;
       currentTeacher.value = teacherName;

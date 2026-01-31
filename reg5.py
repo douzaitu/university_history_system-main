@@ -6,15 +6,19 @@ from neo4j import GraphDatabase, exceptions
 import ollama
 import sys
 from collections import defaultdict
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv('backend/.env')
 
 # -------------------------- 核心配置（增强约束）--------------------------
 CONFIG = {
     "excel_path": "",
-    "neo4j_uri": "bolt://localhost:7687",
-    "neo4j_username": "neo4j",
-    "neo4j_password": "12345678",
+    "neo4j_uri": os.getenv("NEO4J_URI", "bolt://localhost:7687"),
+    "neo4j_username": os.getenv("NEO4J_USERNAME", "neo4j"),
+    "neo4j_password": os.getenv("NEO4J_PASSWORD", "12345678"),
     "ollama_model": "qwen2:7b",  # 更稳定的模型
-    "max_text_length": 500,
+    "max_text_length": 1500,
     "entity_types": [
         "教师姓名", "院系", "职称", "研究方向", "课程名称", "毕业院校", "荣誉称号", "工作职责"
     ],
@@ -186,7 +190,11 @@ def extract_entities_from_text_v3(teacher_name, full_text):
 
 # -------------------------- 2. LLM自我纠错的三元组生成 --------------------------
 def generate_relations_with_llm_correction(entities, text, teacher_name):
-    """LLM生成三元组+3轮自我纠错"""
+    """
+    (已优化) 直接根据提取的实体全量生成三元组。
+    第一步的LLM实体提取已经足够智能，第二步的LLM筛选反而会导致信息丢失（Over-filtering）。
+    因此这里直接使用规则将所有提取出的实体转化为三元组。
+    """
     entity_dict = defaultdict(list)
     for ent, typ in entities:
         if ent and typ in CONFIG["entity_types"]:
@@ -195,49 +203,7 @@ def generate_relations_with_llm_correction(entities, text, teacher_name):
     if not entity_dict.get("教师姓名"):
         return []
 
-    # 基础提示词（含格式约束）
-    base_prompt = f"""
-仅返回JSON！生成三元组需满足：
-1. subject={teacher_name}，predicate仅从{CONFIG['predefined_relations']}选择
-2. 关系-实体映射：{json.dumps(CONFIG['relation_mapping'], ensure_ascii=False)}
-3. object从已知实体选：{json.dumps(dict(entity_dict), ensure_ascii=False)}
-特别注意："工作职责"类型的实体对应"负责"关系！
-文本：{text[:300]}
-输出格式：{{"triples": [{{"subject": "{teacher_name}", "predicate": "", "object": ""}}]}}
-"""
-
-    # 3轮重试纠错
-    for retry in range(3):
-        try:
-            response = ollama.generate(
-                model=CONFIG["ollama_model"],
-                prompt=base_prompt,
-                options={"temperature": 0.0, "max_tokens": 400}
-            )
-            json_str = re.search(r"\{.*\}", response["response"].strip(), re.DOTALL).group()
-            # 基础格式修复
-            json_str = json_str.replace("'", '"').replace(",\n}", "\n}").replace(", }", "}")
-            triples = json.loads(json_str)["triples"]
-            # 验证有效性
-            valid = []
-            for t in triples:
-                subj = t.get("subject", "").strip()
-                pred = t.get("predicate", "").strip()
-                obj = t.get("object", "").strip()
-                if (subj == teacher_name and
-                        pred in CONFIG["predefined_relations"] and
-                        obj and
-                        CONFIG["relation_mapping"].get(pred) in entity_dict and
-                        obj in entity_dict[CONFIG["relation_mapping"][pred]]):
-                    valid.append((subj, pred, obj))
-            if valid:
-                return valid
-            # 纠错提示
-            base_prompt += f"\n上轮错误：生成的三元组无效（关系/实体不匹配），请重新生成！"
-        except Exception as e:
-            base_prompt += f"\n上轮错误：{str(e)[:50]}，请修正JSON格式并重新生成！"
-
-    # 兜底使用规则引擎
+    # 直接使用全量规则生成，保留所有提取到的信息
     return generate_triples_by_rules(entity_dict, teacher_name)
 
 
@@ -248,9 +214,9 @@ def generate_triples_by_rules(entity_dict, teacher_name):
     # 按关系映射生成三元组
     for relation, entity_type in CONFIG["relation_mapping"].items():
         if entity_type in entity_dict and entity_dict[entity_type]:
-            # 取第一个有效实体
-            entity_value = entity_dict[entity_type][0]
-            triples.append((teacher_name, relation, entity_value))
+            # 遍历所有有效实体，不再只取第一个
+            for entity_value in entity_dict[entity_type]:
+                triples.append((teacher_name, relation, entity_value))
     return triples
 
 
