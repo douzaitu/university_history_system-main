@@ -107,9 +107,16 @@ class Command(BaseCommand):
                 
                 teacher_name = str(row['姓名']).strip()
                 
-                # 获取原始数据
-                description = str(row['简介']) if not pd.isna(row['简介']) else ''
-                detailed_content = str(row['详细内容']) if not pd.isna(row['详细内容']) else ''
+                # 获取原始数据 (兼容列名 '简介' 或 '详细内容')
+                description = ''
+                if '简介' in row.index and not pd.isna(row['简介']):
+                    description = str(row['简介'])
+                
+                detailed_content = ''
+                if '详细内容' in row.index and not pd.isna(row['详细内容']):
+                    detailed_content = str(row['详细内容'])
+                elif '个人介绍' in row.index and not pd.isna(row['个人介绍']): # 兼容 '个人介绍'
+                    detailed_content = str(row['个人介绍'])
                 
                 # 调试输出
                 self.stdout.write(f"处理 {teacher_name}...")

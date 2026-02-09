@@ -56,7 +56,7 @@
 
 <script setup>
 import { ref, watch, nextTick } from "vue";
-import axios from "axios";
+import { askAI } from "../api/ai";
 
 const showChat = ref(false);
 const userInput = ref("");
@@ -109,14 +109,12 @@ const sendMessage = async () => {
 
   try {
     // 调用后端API
-    const response = await axios.post("http://localhost:8000/api/ai/ask/", {
-      question: question,
-    });
+    const data = await askAI(question);
 
     // 添加AI回复
     messages.value.push({
       role: "ai",
-      content: response.data.answer,
+      content: data.answer,
     });
   } catch (error) {
     console.error("AI助手请求失败:", error);

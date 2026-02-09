@@ -11,6 +11,22 @@ from dotenv import load_dotenv
 # 加载环境变量
 load_dotenv('backend/.env')
 
+# -------------------------- DJANGO SETUP --------------------------
+# 添加 backend 目录到 sys.path
+sys.path.append(os.path.join(os.path.dirname(__file__), 'backend'))
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
+
+try:
+    import django
+    django.setup()
+    from knowledge_graph.models import Entity, Relationship
+    print("✅ Django environment loaded successfully")
+except Exception as e:
+    print(f"⚠️ Failed to load Django environment: {e}")
+    print("Sync to SQLite will be disabled.")
+    Entity = None
+    Relationship = None
+
 # -------------------------- 核心配置（增强约束）--------------------------
 CONFIG = {
     "excel_path": "",
@@ -232,10 +248,10 @@ def read_teacher_excel(excel_path):
 
     # 定位姓名和个人介绍列
     name_col = next((col for col in excel_columns if any(key in str(col) for key in ["姓名", "导师姓名"])), None)
-    intro_col = next((col for col in excel_columns if any(key in str(col) for key in ["个人介绍", "详细介绍", "简介"])),
+    intro_col = next((col for col in excel_columns if any(key in str(col) for key in ["个人介绍", "详细介绍", "简介", "详细内容"])),
                      None)
     if not name_col or not intro_col:
-        raise ValueError("Excel需包含'姓名'和'个人介绍'列")
+        raise ValueError(f"无法识别Excel列名。检测到的列名: {excel_columns}。请确保包含 '姓名' 和 '详细内容'/'个人介绍' 列。")
 
     # 生成结构化文本
     structured_texts = []
@@ -278,15 +294,61 @@ class Neo4jGraphManager:
             self.driver.close()
             print("🔌 Neo4j连接已关闭")
 
+    def check_entity_exists(self, name):
+        """检查实体是否已存在"""
+        with self.driver.session() as session:
+            result = session.run("MATCH (n:Entity {name: $name}) RETURN count(n) as count", name=name)
+            return result.single()["count"] > 0
+
     def create_triple(self, head, relation, tail):
         try:
             with self.driver.session() as session:
                 session.run("""
                     MERGE (h:Entity {name: $head})
+                    ON CREATE SET h.type = 'entity'
                     MERGE (t:Entity {name: $tail})
+                    ON CREATE SET t.type = 'entity'
                     MERGE (h)-[r:RELATION {type: $relation}]->(t)
                     RETURN h, r, t
                 """, head=head, relation=relation, tail=tail)
+            
+            # Sync to Django SQLite
+            if Entity and Relationship:
+                try:
+                    # 获取或创建源实体
+                    # 简单判断类型：如果是教师名字（在某个上下文里知道），类型设为person，否则一般设为entity
+                    # 这里 reg5.py 主要是三元组，丢失了类型信息上下文，我们默认设为 unknown 或 entity
+                    # 如果能判断 head 是 教师名，则为 person
+                    
+                    src_obj, _ = Entity.objects.get_or_create(
+                        name=head, 
+                        defaults={'entity_type': 'organization' if '学院' in head or '大学' in head else 'person' if len(head) < 4 else 'event'}
+                    )
+                    target_obj, _ = Entity.objects.get_or_create(
+                        name=tail,
+                        defaults={'entity_type': 'organization' if '学院' in tail or '大学' in tail else 'event'}
+                    )
+                    
+                    # 简单的关系映射
+                    rel_type_map = {
+                        '属于': 'belongs_to',
+                        '位于': 'located_in',
+                        '参与': 'participated_in',
+                        '任职': 'belongs_to',
+                        '毕业于': 'related_to'
+                    }
+                    django_rel_type = rel_type_map.get(relation, 'related_to')
+                    
+                    Relationship.objects.get_or_create(
+                        source_entity=src_obj,
+                        target_entity=target_obj,
+                        relationship_type=django_rel_type,
+                        defaults={'description': relation}
+                    )
+                    # print(f"  [SQLite] Synced: {head} -> {tail}")
+                except Exception as db_e:
+                    print(f"  [SQLite] Sync failed: {db_e}")
+
             print(f"插入三元组：({head}, {relation}, {tail})")
         except Exception as e:
             print(f"插入失败：({head}, {relation}, {tail})，错误：{str(e)[:50]}")
@@ -309,7 +371,11 @@ def main():
         CONFIG["excel_path"] = sys.argv[1]
     else:
         current_dir = os.getcwd()
-        excel_files = [f for f in os.listdir(current_dir) if f.endswith((".xlsx", ".xls")) and "导师" in f]
+        # 排除临时文件（以 ~$ 开头）
+        excel_files = [f for f in os.listdir(current_dir) 
+                      if f.endswith((".xlsx", ".xls")) 
+                      and "导师" in f 
+                      and not f.startswith("~$")]
         if excel_files:
             CONFIG["excel_path"] = os.path.join(current_dir, excel_files[0])
             print(f"自动找到Excel文件：{CONFIG['excel_path']}")
@@ -324,6 +390,32 @@ def main():
     except Exception as e:
         print(f"失败：{str(e)}")
         return
+
+    # 步骤1.5：过滤已存在的导师
+    print("\n检查数据库中已存在的导师...")
+    try:
+        neo4j_manager = Neo4jGraphManager()
+        new_teachers = []
+        skipped_count = 0
+        
+        for teacher in structured_teachers:
+            if neo4j_manager.check_entity_exists(teacher["teacher_name"]):
+                print(f"  [跳过] {teacher['teacher_name']} (数据库已存在)")
+                skipped_count += 1
+            else:
+                new_teachers.append(teacher)
+        
+        structured_teachers = new_teachers
+        print(f"\n筛选结果：共 {len(structured_teachers) + skipped_count} 条，跳过 {skipped_count} 条，待处理 {len(structured_teachers)} 条")
+        
+        if not structured_teachers:
+            print("没有新数据需要处理。")
+            neo4j_manager.close()
+            return
+
+    except Exception as e:
+        print(f"连接Neo4j检查失败，将全部处理：{e}")
+        # 如果检查失败，不中断，继续全部处理（只是会多花点时间）
 
     # 步骤2：提取实体（LLM增强）
     print("\n批量提取实体（LLM增强）")
@@ -371,7 +463,7 @@ def main():
     # 步骤4：导入Neo4j
     print("\n导入Neo4j")
     try:
-        neo4j_manager = Neo4jGraphManager()
+        # 复用上面已经创建的 neo4j_manager
         neo4j_manager.batch_create_triples(unique_triples)
         neo4j_manager.close()
     except Exception as e:
