@@ -45,35 +45,37 @@ class DocumentViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(documents, many=True)
             return Response(serializer.data)
         return Response({"error": "请提供status参数"}, status=400)
-    
+
     @action(detail=True, methods=['post'])
-    def update_status(self, request, pk=None):
-        """更新文档状态"""
+    def process_document(self, request, pk=None):
+        """处理文档：提取实体和关系"""
         document = self.get_object()
-        new_status = request.data.get('status')
-        processed_data = request.data.get('processed_data')
         
-        # 注意：这里需要 Document.STATUS_CHOICES 可用
-        # 如果 Document 模型定义了 STATUS_CHOICES，则可以直接使用
-        if hasattr(Document, 'STATUS_CHOICES') and new_status not in dict(Document.STATUS_CHOICES):
-             return Response({"error": "无效的状态"}, status=400)
+        # 检查文件类型
+        if document.file_type != 'excel' and not document.file.name.endswith(('.xlsx', '.xls')):
+             return Response({"error": "目前仅支持处理Excel文件"}, status=400)
+
+        # 更新状态为处理中
+        document.status = 'processing'
+        document.processing_start_time = timezone.now()
+        document.save()
+
+        try:
+            from .services import DocumentProcessor
+            result = DocumentProcessor.process_excel(document)
+            
+            if result.get("status") == "success":
+                document.status = 'processed'
+                document.processed_data = result
+            else:
+                document.status = 'error'
+                document.processed_data = result
+                
+        except Exception as e:
+            document.status = 'error'
+            document.processed_data = {"error": str(e)}
         
-        # 更新状态
-        document.status = new_status
-        
-        # 如果是开始处理，记录开始时间
-        if new_status == 'processing' and not document.processing_start_time:
-            document.processing_start_time = timezone.now()
-        
-        # 如果是处理完成，记录结束时间
-        if new_status in ['processed', 'analyzed', 'error'] and not document.processing_end_time:
-            document.processing_end_time = timezone.now()
-        
-        # 更新处理后的数据
-        if processed_data is not None:
-            document.processed_data = processed_data
-        
+        document.processing_end_time = timezone.now()
         document.save()
         
-        serializer = DocumentDetailSerializer(document)
-        return Response(serializer.data)
+        return Response(DocumentDetailSerializer(document).data)

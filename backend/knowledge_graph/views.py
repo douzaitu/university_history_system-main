@@ -130,8 +130,6 @@ def knowledge_graph_data(request):
             'source': relationship.source_entity.id,
             'target': relationship.target_entity.id,
             'label': relationship.get_relationship_type_display(),
-            'description': relationship.description,
-            'confidence': relationship.confidence
         })
     
     return Response({

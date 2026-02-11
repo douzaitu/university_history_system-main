@@ -30,10 +30,18 @@
     <div v-else-if="person" class="content">
       <!-- 顶部导航标签 -->
       <div class="nav-tabs">
-        <div class="tab" :class="{ active: activeTab === 'info' }" @click="activeTab = 'info'">
+        <div
+          class="tab"
+          :class="{ active: activeTab === 'info' }"
+          @click="activeTab = 'info'"
+        >
           知识信息
         </div>
-        <div class="tab" :class="{ active: activeTab === 'graph' }" @click="activeTab = 'graph'">
+        <div
+          class="tab"
+          :class="{ active: activeTab === 'graph' }"
+          @click="activeTab = 'graph'"
+        >
           关系图谱
         </div>
       </div>
@@ -47,7 +55,9 @@
             <div class="meta-row">
               <span class="read-count">{{ person.readCount }} 阅读</span>
               <span class="separator">｜</span>
-              <span class="update-time">{{ formatUpdateTime(person.lastUpdated) }}</span>
+              <span class="update-time">{{
+                formatUpdateTime(person.lastUpdated)
+              }}</span>
             </div>
             <div class="actions-bar">
               <div class="formats">
@@ -77,7 +87,9 @@
               </div>
               <div class="info-item">
                 <span class="info-label">人物简介</span>
-                <span class="info-value bio-content">{{ formattedBio.join('') }}</span>
+                <span class="info-value bio-content">{{
+                  formattedBio.join("")
+                }}</span>
               </div>
               <div class="info-item">
                 <span class="info-label">职务</span>
@@ -85,7 +97,7 @@
               </div>
             </div>
             <div class="info-right">
-              <div class="photo-section">
+              <div class="photo-section" v-if="person.photo">
                 <img
                   :src="person.photo"
                   :alt="`${person.name}的照片`"
@@ -93,8 +105,12 @@
                   class="person-photo"
                 />
                 <div class="photo-nav">
-                  <button class="nav-btn prev" @click="navigateToPrevious">‹</button>
-                  <button class="nav-btn next" @click="navigateToNext">›</button>
+                  <button class="nav-btn prev" @click="navigateToPrevious">
+                    ‹
+                  </button>
+                  <button class="nav-btn next" @click="navigateToNext">
+                    ›
+                  </button>
                 </div>
               </div>
             </div>
@@ -105,11 +121,12 @@
         <div v-if="activeTab === 'graph'" class="graph-tab">
           <div class="knowledge-graph-section">
             <h2 class="section-title">知识图谱</h2>
-            <KnowledgeGraphComponent :teacher-name="person.name" :height="600" />
+            <KnowledgeGraphComponent
+              :teacher-name="person.name"
+              :height="600"
+            />
           </div>
         </div>
-
-
       </div>
     </div>
 
@@ -137,52 +154,85 @@ const person = ref(null);
 const loading = ref(false);
 const isFavorite = ref(false);
 const showDefaultPhoto = ref(false);
-const activeTab = ref('info'); // 默认选中知识信息标签
+const activeTab = ref("info"); // 默认选中知识信息标签
 
 // 从人物简介中提取职位信息
 const extractPosition = (bio) => {
   if (!bio) return "未知职位";
-  
+
   // 定义职位关键词
   const positionKeywords = [
-        "教授", "副教授", "讲师", "助教", "博导", "硕导",
-        "研究员", "副研究员", "助理研究员",
-        "院长", "副院长", "系主任", "副主任",
-        "所长", "副所长", "主任", "副主任",
-        "党委书记", "副书记", "党委副书记",
-        "博士", "工学博士", "理学博士", "文学博士", "医学博士", "法学博士"
-      ];
-  
+    "教授",
+    "副教授",
+    "讲师",
+    "助教",
+    "博导",
+    "硕导",
+    "研究员",
+    "副研究员",
+    "助理研究员",
+    "院长",
+    "副院长",
+    "系主任",
+    "副主任",
+    "所长",
+    "副所长",
+    "主任",
+    "副主任",
+    "党委书记",
+    "副书记",
+    "党委副书记",
+    "博士",
+    "工学博士",
+    "理学博士",
+    "文学博士",
+    "医学博士",
+    "法学博士",
+  ];
+
   // 遍历关键词，查找第一个匹配的职位
   for (const keyword of positionKeywords) {
     if (bio.includes(keyword)) {
       return keyword;
     }
   }
-  
+
   return "未知职位";
 };
 
 // 从姓名中提取纯姓名，去除职位信息
 const extractPureName = (name) => {
   if (!name) return name;
-  
+
   // 定义常见职位关键词
   const positionKeywords = [
-    "院长", "副院长", "系主任", "副主任",
-    "所长", "副所长", "主任", "副主任",
-    "党委书记", "副书记", "党委副书记",
-    "教授", "副教授", "讲师", "助教", "博导", "硕导"
+    "院长",
+    "副院长",
+    "系主任",
+    "副主任",
+    "所长",
+    "副所长",
+    "主任",
+    "副主任",
+    "党委书记",
+    "副书记",
+    "党委副书记",
+    "教授",
+    "副教授",
+    "讲师",
+    "助教",
+    "博导",
+    "硕导",
   ];
-  
+
   // 遍历关键词，从姓名中移除职位信息
   let pureName = name;
   for (const keyword of positionKeywords) {
-    pureName = pureName.replace(keyword, '');
+    pureName = pureName.replace(keyword, "");
   }
-  
+
   // 去除多余的空格
-  return pureName.replace(/\s+/g, '').trim();
+  return pureName.replace(/\s+/g, "").trim();
 };
 
 // 加载人物详情数据
@@ -202,17 +252,17 @@ const fetchPersonDetail = async (id) => {
         name: pureName,
         category: extractPosition(response.description), // 从简介中提取职位
         bio: response.description,
-        // 修复这里：使用实际的photo_url，如果没有则使用默认图片
+        // 修复这里：使用实际的photo_url，如果没有不显示的图片
         photo: response.photo_url
           ? `http://localhost:8000/media/${response.photo_url}`
-          : "/People/default.jpg",
+          : null,
         readCount: 0,
         lastUpdated: new Date().toISOString(),
         dataVersion: "1.0",
       };
-      console.log('PersonDetail: 原始name =', response.name);
-      console.log('PersonDetail: 提取纯姓名后 =', pureName);
-      console.log('PersonDetail: 传递给知识图谱组件的teacherName =', pureName);
+      console.log("PersonDetail: 原始name =", response.name);
+      console.log("PersonDetail: 提取纯姓名后 =", pureName);
+      console.log("PersonDetail: 传递给知识图谱组件的teacherName =", pureName);
 
       // 检查收藏状态
       checkFavoriteStatus();
@@ -242,7 +292,7 @@ watch(
     if (newId) {
       fetchPersonDetail(newId);
     }
-  }
+  },
 );
 
 // 格式化简介内容，按句号分段并智能去重（保持原始顺序）
@@ -251,7 +301,7 @@ const formattedBio = computed(() => {
 
   // 预处理：将邮箱等特殊格式的文本中的句号替换为临时标记，避免被错误分割
   let processedBio = person.value.bio;
-  
+
   // 匹配邮箱地址，将其中的句号替换为临时标记
   const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
   const emails = [];
@@ -265,11 +315,11 @@ const formattedBio = computed(() => {
     .split(/[。.]/)
     .map((p) => p.trim())
     .filter((p) => p.length > 0);
-  
+
   // 智能处理：合并零散的短句，特别是邮箱相关的部分
   const mergedParagraphs = [];
   let currentPara = "";
-  
+
   paragraphs.forEach((para, index) => {
     // 检查当前段落是否是邮箱的一部分（包含邮箱标记）
     if (para.includes("_EMAIL_")) {
@@ -279,16 +329,18 @@ const formattedBio = computed(() => {
         currentPara = "";
       }
       mergedParagraphs.push(para);
-    } 
+    }
     // 检查当前段落是否是可能的邮箱后缀（如 edu, cn 等）
-    else if ((para === "edu" || para === "cn" || para === "com" || para === "net") && 
-             index > 0 && 
-             paragraphs[index - 1].includes("@")) {
+    else if (
+      (para === "edu" || para === "cn" || para === "com" || para === "net") &&
+      index > 0 &&
+      paragraphs[index - 1].includes("@")
+    ) {
       // 如果上一段包含 @ 符号，且当前段是常见域名后缀，则合并到上一段
       if (mergedParagraphs.length > 0) {
         mergedParagraphs[mergedParagraphs.length - 1] += "." + para;
       }
-    } 
+    }
     // 检查当前段落是否太短（可能是被错误分割的）
     else if (para.length < 10) {
       // 如果当前段落很短，尝试与下一段合并
@@ -306,27 +358,27 @@ const formattedBio = computed(() => {
       mergedParagraphs.push(para);
     }
   });
-  
+
   // 添加最后一个段落
   if (currentPara) {
     mergedParagraphs.push(currentPara);
   }
-  
+
   // 智能去重：去除重复和被包含的段落，同时保持原始顺序
   const uniqueParagraphs = [];
   const paragraphsToKeep = new Array(mergedParagraphs.length).fill(true);
-  
+
   // 第一遍：标记所有应该被删除的段落
   for (let i = 0; i < mergedParagraphs.length; i++) {
     if (!paragraphsToKeep[i]) continue; // 跳过已经被标记为删除的段落
-    
+
     const currentPara = mergedParagraphs[i];
-    
+
     for (let j = i + 1; j < mergedParagraphs.length; j++) {
       if (!paragraphsToKeep[j]) continue; // 跳过已经被标记为删除的段落
-      
+
       const nextPara = mergedParagraphs[j];
-      
+
       // 检查两个段落是否有包含关系或完全相同
       if (currentPara === nextPara) {
         // 如果完全相同，删除后面的段落
@@ -341,14 +393,14 @@ const formattedBio = computed(() => {
       }
     }
   }
-  
+
   // 第二遍：收集所有应该保留的段落
   for (let i = 0; i < mergedParagraphs.length; i++) {
     if (paragraphsToKeep[i]) {
       uniqueParagraphs.push(mergedParagraphs[i]);
     }
   }
-  
+
   // 恢复邮箱中的句号
   return uniqueParagraphs
     .map((p) => {
@@ -367,8 +419,10 @@ const relatedPeople = computed(() => {
 
 // 图片加载错误处理
 const handleImageError = (event) => {
-  event.target.src = "/People/default.jpg";
-  showDefaultPhoto.value = true;
+  // 图片加载失败时，直接隐藏图片，而不是显示默认图
+  if (person.value) {
+    person.value.photo = null;
+  }
 };
 
 // 格式化更新时间
@@ -378,7 +432,7 @@ const formatUpdateTime = (timestamp) => {
   const date = new Date(timestamp);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
     2,
-    "0"
+    "0",
   )}-${String(date.getDate()).padStart(2, "0")}`;
 };
 
@@ -418,7 +472,7 @@ const increaseReadCount = () => {
 
   // 如果需要持久化，可以保存到localStorage
   const readCounts = JSON.parse(
-    localStorage.getItem("personReadCounts") || "{}"
+    localStorage.getItem("personReadCounts") || "{}",
   );
   readCounts[person.value.id] = (readCounts[person.value.id] || 0) + 1;
   localStorage.setItem("personReadCounts", JSON.stringify(readCounts));
@@ -448,13 +502,15 @@ const handleSearch = () => {
 const navigateToPrevious = async () => {
   try {
     // 获取所有人物列表
-    const response = await fetch('http://localhost:8000/api/entities/?type=person');
+    const response = await fetch(
+      "http://localhost:8000/api/entities/?type=person",
+    );
     const people = await response.json();
-    
+
     if (people && people.length > 0) {
       // 找到当前人物的索引
-      const currentIndex = people.findIndex(p => p.id === person.value.id);
-      
+      const currentIndex = people.findIndex((p) => p.id === person.value.id);
+
       if (currentIndex > 0) {
         // 导航到上一个人物
         const previousPerson = people[currentIndex - 1];
@@ -466,8 +522,8 @@ const navigateToPrevious = async () => {
       }
     }
   } catch (error) {
-    console.error('获取人物列表失败:', error);
-    alert('获取人物列表失败');
+    console.error("获取人物列表失败:", error);
+    alert("获取人物列表失败");
   }
 };
 
@@ -475,13 +531,15 @@ const navigateToPrevious = async () => {
 const navigateToNext = async () => {
   try {
     // 获取所有人物列表
-    const response = await fetch('http://localhost:8000/api/entities/?type=person');
+    const response = await fetch(
+      "http://localhost:8000/api/entities/?type=person",
+    );
     const people = await response.json();
-    
+
     if (people && people.length > 0) {
       // 找到当前人物的索引
-      const currentIndex = people.findIndex(p => p.id === person.value.id);
-      
+      const currentIndex = people.findIndex((p) => p.id === person.value.id);
+
       if (currentIndex < people.length - 1) {
         // 导航到下一个人物
         const nextPerson = people[currentIndex + 1];
@@ -493,8 +551,8 @@ const navigateToNext = async () => {
       }
     }
   } catch (error) {
-    console.error('获取人物列表失败:', error);
-    alert('获取人物列表失败');
+    console.error("获取人物列表失败:", error);
+    alert("获取人物列表失败");
   }
 };
 </script>
@@ -611,7 +669,9 @@ const navigateToNext = async () => {
   font-size: 18px;
   margin-left: 20px;
   cursor: pointer;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .actions .icon:hover {
@@ -912,8 +972,12 @@ const navigateToNext = async () => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* 响应式设计 */
@@ -921,11 +985,11 @@ const navigateToNext = async () => {
   .content {
     padding: 24px 20px;
   }
-  
+
   .person-info {
     gap: 32px;
   }
-  
+
   .info-right {
     width: 200px;
   }
@@ -936,20 +1000,20 @@ const navigateToNext = async () => {
     height: 70px;
     padding: 0 20px;
   }
-  
+
   .logo {
     width: 40px;
     height: 40px;
   }
-  
+
   .university-name {
     font-size: 14px;
   }
-  
+
   .system-name {
     font-size: 12px;
   }
-  
+
   .site-title {
     font-size: 16px;
   }
@@ -961,72 +1025,72 @@ const navigateToNext = async () => {
     height: 60px;
     flex-wrap: wrap;
   }
-  
+
   .logo-section {
     gap: 12px;
   }
-  
+
   .logo {
     width: 36px;
     height: 36px;
   }
-  
+
   .university-name {
     font-size: 13px;
   }
-  
+
   .system-name {
     font-size: 11px;
   }
-  
+
   .nav-section {
     gap: 16px;
   }
-  
+
   .site-title {
     font-size: 14px;
   }
-  
+
   .site-title .sub {
     display: none;
   }
-  
+
   .content {
     padding: 20px 16px;
   }
-  
+
   .tab-content {
     padding: 24px;
   }
-  
+
   .name {
     font-size: 28px;
   }
-  
+
   /* 在平板设备上，信息和照片垂直排列 */
   .person-info {
     flex-direction: column;
     gap: 24px;
   }
-  
+
   .info-right {
     width: 100%;
     max-width: 240px;
     margin: 0 auto;
   }
-  
+
   /* 操作栏在平板设备上垂直排列 */
   .actions-bar {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
   }
-  
+
   .formats {
     width: 100%;
     justify-content: flex-start;
   }
-  
+
   .action-buttons-small {
     width: 100%;
     justify-content: flex-start;
@@ -1037,20 +1101,20 @@ const navigateToNext = async () => {
   .content {
     padding: 16px 12px;
   }
-  
+
   .tab-content {
     padding: 16px;
   }
-  
+
   .name {
     font-size: 24px;
   }
-  
+
   .info-item {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .info-label {
     width: auto;
   }

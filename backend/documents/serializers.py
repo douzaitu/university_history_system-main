@@ -16,7 +16,7 @@ class DocumentUploadSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("文件大小不能超过50MB")
         
         # 检查文件类型
-        allowed_types = ['txt', 'pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']
+        allowed_types = ['pdf', 'doc', 'docx', 'xlsx', 'xls']
         ext = value.name.split('.')[-1].lower()
         if ext not in allowed_types:
             raise serializers.ValidationError(f"不支持的文件类型: {ext}")
@@ -31,7 +31,7 @@ class DocumentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Document
         fields = ['id', 'title', 'file', 'file_type', 'uploader', 'uploader_name',
-                 'upload_time', 'status', 'processed_data', 'file_size',
+                 'upload_time', 'status', 'processed_data',
                  'processing_start_time', 'processing_end_time', 'processing_duration']
     
     def get_processing_duration(self, obj):

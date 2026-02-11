@@ -27,7 +27,7 @@ class RelationshipSerializer(serializers.ModelSerializer):
     class Meta:
         model = Relationship
         fields = ['id', 'source_entity', 'source_entity_name', 'target_entity', 
-                 'target_entity_name', 'relationship_type', 'description', 'confidence']
+                 'target_entity_name', 'relationship_type']
 
 class RelationshipDetailSerializer(serializers.ModelSerializer):
     """关系详情序列化器"""
