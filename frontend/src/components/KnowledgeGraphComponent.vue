@@ -285,7 +285,8 @@ const renderGraph = async () => {
             },
           };
         }),
-        roam: true,
+        draggable: true,
+        roam: "scale", // 改为只允许缩放，禁止拖动背景和线条平移
         scaleLimit: {
           min: 0.2,
           max: 3,
@@ -317,6 +318,35 @@ const renderGraph = async () => {
 
   // 设置图表选项
   chart.value.setOption(option);
+
+  // 清除旧的事件监听器以防重复绑定
+  chart.value.off('mouseup'); 
+
+  // 监听鼠标抬起事件，使得拖拽后的节点回弹（解除固定状态）
+  chart.value.on('mouseup', function (params) {
+    // 确保是在操作节点
+    if (params.componentType === 'series' && params.seriesType === 'graph' && params.dataType === 'node') {
+        const option = chart.value.getOption();
+        if (option.series && option.series[0] && option.series[0].data) {
+            // 获取当前操作的节点数据
+            const dataIndex = params.dataIndex;
+            const dataItem = option.series[0].data[dataIndex];
+            
+            if (dataItem) {
+                // 解除固定状态，让力导向布局重新接管位置
+                dataItem.fixed = false;
+                // 注意：不用清除 x, y，力导向会自动更新它们
+                
+                // 更新图表配置
+                chart.value.setOption({
+                    series: [{
+                        data: option.series[0].data
+                    }]
+                });
+            }
+        }
+    }
+  });
 };
 
 // 清除图谱
