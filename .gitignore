@@ -1,0 +1,28 @@
+# Jupyter Notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+venv_backup/
+
+# VS Code
+.vscode/
+
+# Django
+db.sqlite3
+media/
+static/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class

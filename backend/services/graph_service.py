@@ -9,16 +9,19 @@ class Neo4jGraphService:
     """
     
     @staticmethod
+    def _to_str_id(val):
+        """将ID转换为字符串，以适应前端可视化库的要求"""
+        if val is None:
+            return None
+        return str(val)
+
+    @staticmethod
     def get_entity_subgraph(entity_name, limit=50):
         """
         获取实体相关子图 (1-hop)
         :param entity_name: 实体名称
         :param limit: 限制返回的邻居节点数量
         """
-        # 1. 查找中心节点
-        # 2. 查找出边关系 (outgoing)
-        # 3. 查找入边关系 (incoming)
-        
         query = """
         MATCH (center:Entity {name: $name})
         
@@ -27,9 +30,9 @@ class Neo4jGraphService:
         WITH center, collect({
             source: center.name, 
             target: target.name, 
-            source_id: center.django_id,
+            source_id: center.django_id, 
             target_id: target.django_id,
-            relation: type(r1), 
+            relation: r1.type, 
             target_type: target.type
         })[..$limit] as outgoing
         
@@ -40,7 +43,7 @@ class Neo4jGraphService:
             target: center.name, 
             source_id: source.django_id,
             target_id: center.django_id,
-            relation: type(r2), 
+            relation: r2.type, 
             source_type: source.type
         })[..$limit] as incoming
         
@@ -65,8 +68,9 @@ class Neo4jGraphService:
             edges = []
             
             # 添加中心节点
+            c_id = Neo4jGraphService._to_str_id(center_id) or center_name
             nodes[center_name] = {
-                'id': center_id if center_id else center_name, # 优先使用 ID，兼容旧数据用 name
+                'id': c_id, 
                 'label': center_name,
                 'type': center_type,
                 'size': 25,
@@ -78,10 +82,11 @@ class Neo4jGraphService:
                 if not item or item['target'] is None: continue
                 target_name = item['target']
                 target_id = item['target_id']
+                t_id = Neo4jGraphService._to_str_id(target_id) or target_name
                 
                 if target_name not in nodes:
                     nodes[target_name] = {
-                        'id': target_id if target_id else target_name,
+                        'id': t_id,
                         'label': target_name, 
                         'type': item['target_type'], 
                         'size': 15
@@ -91,7 +96,7 @@ class Neo4jGraphService:
                     'source': nodes[center_name]['id'],
                     'target': nodes[target_name]['id'],
                     'label': item['relation'],
-                    'description': '' # Neo4j 关系属性中如果有描述可加上
+                    'description': '' 
                 })
 
             # 处理入边
@@ -99,10 +104,11 @@ class Neo4jGraphService:
                 if not item or item['source'] is None: continue
                 source_name = item['source']
                 source_id = item['source_id']
+                s_id = Neo4jGraphService._to_str_id(source_id) or source_name
                 
                 if source_name not in nodes:
                     nodes[source_name] = {
-                        'id': source_id if source_id else source_name,
+                        'id': s_id,
                         'label': source_name, 
                         'type': item['source_type'], 
                         'size': 15
@@ -147,7 +153,7 @@ class Neo4jGraphService:
             entities = []
             for r in result:
                 entities.append({
-                    'id': r['id'],
+                    'id': Neo4jGraphService._to_str_id(r['id']), 
                     'name': r['name'],
                     'type': r['type']
                 })
@@ -158,39 +164,16 @@ class Neo4jGraphService:
 
     @staticmethod
     def get_graph_overview(limit=50):
-        """
-        获取图谱概览（仅返回重要节点，例如度数最高的节点）
-        不再返回全量数据，避免浏览器卡死
-        """
-        query = """
-        // 找出度数最高的 N 个节点
-        MATCH (n:Entity)
-        OPTIONAL MATCH (n)-[r]-()
-        WITH n, count(r) as degree
-        ORDER BY degree DESC
-        LIMIT $limit
-        
-        // 找出这些节点之间的内部关系
-        OPTIONAL MATCH (n)-[r]->(m:Entity)
-        WHERE m IN collect(n) OR (m.django_id IS NOT NULL AND exists((m))) // 简化逻辑，只取一度
-        
-        RETURN n.name as source_name, n.type as source_type, n.django_id as source_id, degree,
-               m.name as target_name, m.type as target_type, m.django_id as target_id, type(r) as rel_type
-        """
-        
-        # 上面的查询逻辑有点复杂，简化一下：
-        # 1. 取 Top N 节点
-        # 2. 取这些节点的一度关系（最多 M 条）
-        
+        """获取图谱概览"""
         query_simplified = """
         MATCH (n:Entity)
         WITH n, rand() as r
-        ORDER BY r // 随机取样，让每次看到的图不一样，增加趣味性，或者改为按度数排序
+        ORDER BY r 
         LIMIT $node_limit
         
         OPTIONAL MATCH (n)-[r]->(m:Entity)
         RETURN n.name as source_name, n.type as source_type, n.django_id as source_id,
-               type(r) as rel_type,
+               r.type as rel_type,
                m.name as target_name, m.type as target_type, m.django_id as target_id
         LIMIT $rel_limit
         """
@@ -210,20 +193,24 @@ class Neo4jGraphService:
                 t_name = row['target_name']
                 t_id = row['target_id']
                 
+                final_s_id = Neo4jGraphService._to_str_id(s_id) or s_name
+                
                 # 添加源节点
                 if s_name and s_name not in nodes:
                     nodes[s_name] = {
-                        'id': s_id if s_id else s_name, 
+                        'id': final_s_id, 
                         'label': s_name, 
                         'type': row['source_type'], 
-                        'size': 10 + (2 if row['rel_type'] else 0) # 简单的大小区分
+                        'size': 10 + (2 if row['rel_type'] else 0)
                     }
                 
                 # 添加目标节点和边
                 if t_name and row['rel_type']: 
+                    final_t_id = Neo4jGraphService._to_str_id(t_id) or t_name
+                    
                     if t_name not in nodes:
                          nodes[t_name] = {
-                             'id': t_id if t_id else t_name, 
+                             'id': final_t_id, 
                              'label': t_name, 
                              'type': row['target_type'], 
                              'size': 10
@@ -246,7 +233,6 @@ class Neo4jGraphService:
     @staticmethod
     def get_shortest_path(source_name, target_name):
         """查询两个实体之间的最短路径"""
-        # 使用 shortestPath 函数
         query = """
         MATCH (p1:Entity {name: $source}), (p2:Entity {name: $target})
         MATCH p = shortestPath((p1)-[*..10]-(p2))
@@ -258,11 +244,6 @@ class Neo4jGraphService:
             if not result:
                 return None
             
-            # Neo4j Driver 返回的 Path 对象需要特殊处理
-            # 但如果你用 simple json result，可能拿到的是复杂的结构
-            # 假设 Neo4jConnection 处理了 session.run 的结果
-            
-            # 由于 python neo4j driver 返回的是 Path 对象，包含 nodes 和 relationships
             path_record = result[0]['p']
             
             nodes = {}
@@ -271,9 +252,11 @@ class Neo4jGraphService:
             for node in path_record.nodes:
                 name = node['name']
                 django_id = node.get('django_id')
+                final_id = Neo4jGraphService._to_str_id(django_id) or name
+                
                 if name not in nodes:
                     nodes[name] = {
-                        'id': django_id if django_id else name,
+                        'id': final_id,
                         'label': name,
                         'type': node.get('type', 'unknown'),
                         'size': 15
@@ -289,7 +272,7 @@ class Neo4jGraphService:
                 edges.append({
                     'source': start_id,
                     'target': end_id,
-                    'label': rel.type
+                    'label': rel.get('type', rel.type)
                 })
                 
             return {'nodes': list(nodes.values()), 'edges': edges}
