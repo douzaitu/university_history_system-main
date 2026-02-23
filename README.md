@@ -83,14 +83,9 @@ university_history_system/
 
 ## 后端启动
 
-<<<<<<< HEAD
-1.进入后端目录 cd backend 2.激活虚拟环境 代码下载目录\university_history_system-main\venv\Scripts\activate 3.启动后端 python manage.py runserver
-
-=======
-1.进入后端目录 cd backend 
-2.激活虚拟环境 代码下载目录\university_history_system-main\venv\Scripts\activate 3.启动后端 python manage.py runserver
+======= 1.进入后端目录 cd backend 2.激活虚拟环境 代码下载目录\university_history_system-main\venv\Scripts\activate 3.启动后端 python manage.py runserver
 python manage.py qcluster
->>>>>>> 38120c2d7e5e8524eaa9c1f10c87873f364db92a
+
 ## 前端启动
 
 1.进入前端目录 cd frontend 2.启动前端 npm run dev

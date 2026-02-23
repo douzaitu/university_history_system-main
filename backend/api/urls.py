@@ -21,6 +21,7 @@ urlpatterns = [
     path('entity-subgraph/<int:entity_id>/', kg_views.entity_subgraph, name='entity-subgraph'),
     path('kg/teacher/<str:teacher_name>/', kg_views.knowledge_graph_teacher, name='knowledge_graph_teacher'),
     path('kg/search/', kg_views.knowledge_graph_search, name='knowledge_graph_search'),
+    path('kg/path/', kg_views.knowledge_graph_path, name='knowledge_graph_path'),
     
     # AI 助手功能路由
     path('ai/ask/', views.ask_ai_assistant, name='ask_ai_assistant'),
