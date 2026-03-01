@@ -144,15 +144,35 @@ import Card from './components/Card.vue'
 }
 
 .main-content {
-  padding: 28px 20px;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .page-title {
   text-align: center;
-  color: #2d3748;
-  font-size: 24px;
-  margin: 6px 0 18px;
-  font-weight: 600;
+  color: #1f2937;
+  font-size: 28px;
+  margin: 12px 0 30px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  font-family: "Microsoft YaHei", "SimHei", "PingFang SC", sans-serif;
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.page-title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #4a9eff, transparent);
+  border-radius: 2px;
 }
 
 .card-row {
