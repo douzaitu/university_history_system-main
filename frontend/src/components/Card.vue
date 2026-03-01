@@ -66,29 +66,37 @@ function handleClick(){
 }
 
 .card-body{
-  padding:18px;
+  padding:24px 20px 20px;
   display:flex;
   flex-direction:column;
-  justify-content:space-between;
   flex:1;
+  text-align: center;
 }
 .card-title{
-  font-size:28px;
+  font-size:26px;
   margin:0;
   color:#2d3748;
-  font-weight: 600;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 2px;
+  font-family: "Microsoft YaHei", "SimHei", "PingFang SC", sans-serif;
 }
 .card-desc{
-  margin:10px 0 0;
-  font-size:13px;
+  margin:24px 0 0;
+  font-size:14px;
   color:#6b7280;
   height:90px;
   overflow:hidden;
+  text-align: center;
+  line-height: 1.7;
+  letter-spacing: 0.5px;
 }
 .card-meta{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  margin-top: auto;
+  padding-top: 16px;
 }
 .count{
   background: rgba(74, 158, 255, 0.2);
