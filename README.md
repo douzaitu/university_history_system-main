@@ -115,7 +115,7 @@ python manage.py qcluster
 ## 网站访问
 
 前端访问：http://localhost:5173
-后端访问：http://localhost:8000/api/management/
+后端访问：http://127.0.0.1:8000/admin/
 后端管理员身份信息：
 用户名：admin
 密码admin123456
