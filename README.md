@@ -83,7 +83,12 @@ university_history_system/
 
 ## 后端启动
 
-1.进入后端目录 cd backend 2.激活虚拟环境 代码下载目录\university_history_system-main\venv\Scripts\activate 3.启动后端 python manage.py runserver
+<<<<<<< HEAD
+======= 1.进入后端目录 cd backend 2.激活虚拟环境 代码下载目录\university_history_system-main\venv\Scripts\activate 3.启动后端 python manage.py runserver
+=======
+1.进入后端目录 cd backend 
+2.激活虚拟环境 代码下载目录\university_history_system-main\venv\Scripts\activate 3.启动后端 python manage.py runserver
+>>>>>>> adb617673616277a41511a58a89bb55e11411af4
 python manage.py qcluster
 
 ## 前端启动

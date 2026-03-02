@@ -115,11 +115,8 @@ def _entity_subgraph_fallback(center_entity):
     nodes = []
     edges = []
     
-    # 转换为字符串 ID
-    center_id = str(center_entity.id)
-    
     nodes.append({
-        'id': center_id,
+        'id': center_entity.id,
         'label': center_entity.name,
         'type': center_entity.entity_type,
         'description': center_entity.description,
@@ -130,18 +127,16 @@ def _entity_subgraph_fallback(center_entity):
     # 简单的 ORM 查询
     for rel in center_entity.outgoing_relationships.all()[:50]:
         target = rel.target_entity
-        target_id = str(target.id)
-        nodes.append({'id': target_id, 'label': target.name, 'type': target.entity_type, 'size': 15})
-        edges.append({'source': center_id, 'target': target_id, 'label': rel.get_relationship_type_display()})
+        nodes.append({'id': target.id, 'label': target.name, 'type': target.entity_type, 'size': 15})
+        edges.append({'source': center_entity.id, 'target': target.id, 'label': rel.get_relationship_type_display()})
         
     for rel in center_entity.incoming_relationships.all()[:50]:
         source = rel.source_entity
-        source_id = str(source.id)
-        nodes.append({'id': source_id, 'label': source.name, 'type': source.entity_type, 'size': 15})
-        edges.append({'source': source_id, 'target': center_id, 'label': rel.get_relationship_type_display()})
+        nodes.append({'id': source.id, 'label': source.name, 'type': source.entity_type, 'size': 15})
+        edges.append({'source': source.id, 'target': center_entity.id, 'label': rel.get_relationship_type_display()})
         
     # 去重
-    unique_nodes = {node['id']: node for node in nodes}.values()
+    unique_nodes = {str(node['id']): node for node in nodes}.values()
     
     return Response({
         'center': center_entity.name, # 保持格式一致
