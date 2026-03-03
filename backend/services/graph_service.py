@@ -29,7 +29,7 @@ class Neo4jGraphService:
             target: target.name, 
             source_id: center.django_id,
             target_id: target.django_id,
-            relation: type(r1), 
+            relation: coalesce(r1.type, type(r1)), 
             target_type: target.type
         })[..$limit] as outgoing
         
@@ -40,7 +40,7 @@ class Neo4jGraphService:
             target: center.name, 
             source_id: source.django_id,
             target_id: center.django_id,
-            relation: type(r2), 
+            relation: coalesce(r2.type, type(r2)), 
             source_type: source.type
         })[..$limit] as incoming
         
@@ -66,7 +66,7 @@ class Neo4jGraphService:
             
             # 添加中心节点
             nodes[center_name] = {
-                'id': center_id if center_id else center_name, # 优先使用 ID，兼容旧数据用 name
+                'id': str(center_id) if center_id else center_name, # 优先使用 ID，兼容旧数据用 name
                 'label': center_name,
                 'type': center_type,
                 'size': 25,
@@ -81,7 +81,7 @@ class Neo4jGraphService:
                 
                 if target_name not in nodes:
                     nodes[target_name] = {
-                        'id': target_id if target_id else target_name,
+                        'id': str(target_id) if target_id else target_name,
                         'label': target_name, 
                         'type': item['target_type'], 
                         'size': 15
@@ -102,7 +102,7 @@ class Neo4jGraphService:
                 
                 if source_name not in nodes:
                     nodes[source_name] = {
-                        'id': source_id if source_id else source_name,
+                        'id': str(source_id) if source_id else source_name,
                         'label': source_name, 
                         'type': item['source_type'], 
                         'size': 15
@@ -162,42 +162,29 @@ class Neo4jGraphService:
         获取图谱概览（仅返回重要节点，例如度数最高的节点）
         不再返回全量数据，避免浏览器卡死
         """
+        # 修改查询策略：
+        # 1. 优先选择连接数多（度数高）的节点，而不是随机节点，这样更有可能看到关系
+        # 2. 同时查找入边和出边，不仅仅是出边
+        
         query = """
-        // 找出度数最高的 N 个节点
         MATCH (n:Entity)
         OPTIONAL MATCH (n)-[r]-()
         WITH n, count(r) as degree
         ORDER BY degree DESC
-        LIMIT $limit
-        
-        // 找出这些节点之间的内部关系
-        OPTIONAL MATCH (n)-[r]->(m:Entity)
-        WHERE m IN collect(n) OR (m.django_id IS NOT NULL AND exists((m))) // 简化逻辑，只取一度
-        
-        RETURN n.name as source_name, n.type as source_type, n.django_id as source_id, degree,
-               m.name as target_name, m.type as target_type, m.django_id as target_id, type(r) as rel_type
-        """
-        
-        # 上面的查询逻辑有点复杂，简化一下：
-        # 1. 取 Top N 节点
-        # 2. 取这些节点的一度关系（最多 M 条）
-        
-        query_simplified = """
-        MATCH (n:Entity)
-        WITH n, rand() as r
-        ORDER BY r // 随机取样，让每次看到的图不一样，增加趣味性，或者改为按度数排序
         LIMIT $node_limit
         
-        OPTIONAL MATCH (n)-[r]->(m:Entity)
+        // 查找这些高频节点之间的关系（包括出边和入边，避免方向问题遗漏）
+        OPTIONAL MATCH (n)-[r]-(m:Entity)
         RETURN n.name as source_name, n.type as source_type, n.django_id as source_id,
-               type(r) as rel_type,
-               m.name as target_name, m.type as target_type, m.django_id as target_id
+               coalesce(r.type, type(r)) as rel_type,
+               m.name as target_name, m.type as target_type, m.django_id as target_id,
+               startNode(r) = n as is_outgoing
         LIMIT $rel_limit
         """
         
-        params = {"node_limit": limit, "rel_limit": limit * 2}
+        params = {"node_limit": limit, "rel_limit": limit * 4} # 增加关系限制
         try:
-            result = Neo4jConnection.query(query_simplified, params)
+            result = Neo4jConnection.query(query, params)
             if not result:
                 return {'nodes': [], 'edges': []}
                 
@@ -209,31 +196,56 @@ class Neo4jGraphService:
                 s_id = row['source_id']
                 t_name = row['target_name']
                 t_id = row['target_id']
+                rel_type = row['rel_type']
+                is_outgoing = row['is_outgoing']
                 
-                # 添加源节点
+                # 添加当前中心节点 (n)
                 if s_name and s_name not in nodes:
                     nodes[s_name] = {
-                        'id': s_id if s_id else s_name, 
+                        'id': str(s_id) if s_id else s_name, 
                         'label': s_name, 
                         'type': row['source_type'], 
-                        'size': 10 + (2 if row['rel_type'] else 0) # 简单的大小区分
+                        'size': 20
                     }
                 
-                # 添加目标节点和边
-                if t_name and row['rel_type']: 
+                # 添加由于关系连接到的节点 (m) 和边
+                if t_name and rel_type: 
                     if t_name not in nodes:
                          nodes[t_name] = {
-                             'id': t_id if t_id else t_name, 
+                             'id': str(t_id) if t_id else t_name, 
                              'label': t_name, 
                              'type': row['target_type'], 
-                             'size': 10
+                             'size': 15
                          }
                     
-                    edges.append({
-                        'source': nodes[s_name]['id'],
-                        'target': nodes[t_name]['id'],
-                        'label': row['rel_type']
-                    })
+                    # 只有当 n 是起始点时才添加边，避免 (A)-(B) 和 (B)-(A) 造成重复边
+                    # 或者我们依靠 distinct 也可以，这里为了简单，我们全部添加，由前端处理或这里去重
+                    # 这里逻辑优化：始终以 source -> target 添加边
+                    
+                    source_node_id = nodes[s_name]['id']
+                    target_node_id = nodes[t_name]['id']
+                    
+                    # 确定边的真正方向
+                    if is_outgoing:
+                        # n -> m
+                        edge = {
+                            'source': source_node_id,
+                            'target': target_node_id,
+                            'label': rel_type
+                        }
+                    else:
+                        # m -> n
+                        edge = {
+                            'source': target_node_id,
+                            'target': source_node_id,
+                            'label': rel_type
+                        }
+
+                    # 防止重复添加边 (简单去重)
+                    edge_key = f"{edge['source']}_{edge['target']}_{edge['label']}"
+                    # 这里用一个简单的检查，实际上 edges 是 list，效率略低但数据量小没关系
+                    if not any(e['source'] == edge['source'] and e['target'] == edge['target'] and e['label'] == edge['label'] for e in edges):
+                        edges.append(edge)
             
             return {
                 'nodes': list(nodes.values()),
@@ -289,7 +301,7 @@ class Neo4jGraphService:
                 edges.append({
                     'source': start_id,
                     'target': end_id,
-                    'label': rel.type
+                    'label': rel.get('type', rel.type)
                 })
                 
             return {'nodes': list(nodes.values()), 'edges': edges}

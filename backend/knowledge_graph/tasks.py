@@ -73,39 +73,50 @@ def sync_relationship_task(relationship_id, created=False):
     try:
         rel = Relationship.objects.select_related('source_entity', 'target_entity').get(id=relationship_id)
         
-        django_id = rel.id
-        source_name = rel.source_entity.name
-        target_name = rel.target_entity.name
+        rel_django_id = rel.id
         rel_type = rel.relationship_type
         
-        # 1. 确保两端节点存在 (虽然通常由 Entity 同步保证，但为了鲁棒性，这里可以再 MERGE 一次，或者假设它们存在)
-        # 这里为了简化，我们假设 Entity 已经同步了。如果 Entity 还没同步，Match 可能会失败。
-        # 更稳健的做法是 MERGE 节点。但这里我们主要关注关系。
+        # 获取源实体信息
+        source = rel.source_entity
+        source_django_id = source.id
+        source_name = source.name
+        source_type = source.entity_type
         
-        # 2. 删除旧的同 ID 关系 (如果是更新操作)
-        delete_query = "MATCH ()-[r:RELATION {django_id: $django_id}]->() DELETE r"
-        Neo4jConnection.query(delete_query, {"django_id": django_id})
+        # 获取目标实体信息
+        target = rel.target_entity
+        target_django_id = target.id
+        target_name = target.name
+        target_type = target.entity_type
         
-        # 3. 创建新关系
-        # 注意：这里假设节点已经通过 name 或者 django_id 存在了。
-        # 之前的逻辑是用 name 匹配的。为了兼容旧数据，继续沿用 name 匹配，但也尝试匹配 django_id
+        # 构建更健壮的 Cypher 查询
+        # 1. 确保源实体存在 (MERGE by django_id)
+        # 2. 确保目标实体存在 (MERGE by django_id)
+        # 3. 创建/更新关系 (MERGE by django_id)
         
-        create_query = """
-        MATCH (source:Entity {name: $source_name})
-        MATCH (target:Entity {name: $target_name})
-        MERGE (source)-[r:RELATION {django_id: $django_id}]->(target)
-        SET r.type = $type
+        query = """
+        MERGE (source:Entity {django_id: $source_id})
+        ON CREATE SET source.name = $source_name, source.type = $source_type
+        
+        MERGE (target:Entity {django_id: $target_id})
+        ON CREATE SET target.name = $target_name, target.type = $target_type
+        
+        MERGE (source)-[r:RELATION {django_id: $rel_id}]->(target)
+        SET r.type = $rel_type
         """
         
         params = {
+            "source_id": source_django_id,
             "source_name": source_name,
+            "source_type": source_type,
+            "target_id": target_django_id,
             "target_name": target_name,
-            "type": rel_type,
-            "django_id": django_id
+            "target_type": target_type,
+            "rel_id": rel_django_id,
+            "rel_type": rel_type
         }
         
-        Neo4jConnection.query(create_query, params)
-        logger.info(f"Async synced relationship to Neo4j: {source_name} - {rel_type} -> {target_name}")
+        Neo4jConnection.query(query, params)
+        logger.info(f"Async synced relationship to Neo4j: {source_name} - {rel_type} -> {target_name} (Rel ID: {rel_django_id})")
         
     except Relationship.DoesNotExist:
         logger.warning(f"Relationship {relationship_id} not found during sync task.")

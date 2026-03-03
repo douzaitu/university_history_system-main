@@ -198,10 +198,10 @@ const renderGraph = async () => {
           const symbolSize = nodeSize;
           
           return {
-            id: node.id,
+            id: String(node.id),
             name: node.label,
             symbolSize: symbolSize,
-            symbol: "circle",
+            symbol: symbolType,
             type: node.type,
             x: node.x,
             y: node.y,
@@ -265,8 +265,8 @@ const renderGraph = async () => {
           };
           
           return {
-            source: edge.source,
-            target: edge.target,
+            source: String(edge.source),
+            target: String(edge.target),
             sourceName: graphData.value.nodes.find((n) => n.id === edge.source)?.label || "",
             targetName: graphData.value.nodes.find((n) => n.id === edge.target)?.label || "",
             label: edge.label,
@@ -287,13 +287,19 @@ const renderGraph = async () => {
         }),
         draggable: true,
         roam: "scale", // 改为只允许缩放，禁止拖动背景和线条平移
+        // 优化节点选择行为
+        focusNodeAdjacency: true,
+        // 优化节点高亮行为
+        emphasis: {
+          focus: "adjacency",
+        },
         scaleLimit: {
           min: 0.2,
           max: 3,
         },
         force: {
           repulsion: 1000,
-          edgeLength: [120, 250],
+          edgeLength: [100, 160],
           gravity: 0.05,
           friction: 0.6,
         },

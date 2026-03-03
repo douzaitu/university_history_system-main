@@ -36,7 +36,7 @@ INSTALLED_APPS = [
 # Django Q 配置
 Q_CLUSTER = {
     'name': 'university_history_system',
-    'workers': 4,
+    'workers': 1,
     'recycle': 500,
     'timeout': 600,
     'retry': 660,  # 任务失败尝试时间，建议比 timeout 长

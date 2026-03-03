@@ -259,7 +259,7 @@ const renderGraph = async () => {
     const symbolType = node.type === "teacher" ? "circle" : "circle";
 
     return {
-      id: node.id,
+      id: String(node.id),
       name: node.label,
       symbolSize: nodeSize,
       symbol: symbolType,
@@ -275,7 +275,11 @@ const renderGraph = async () => {
       label: {
         show: true,
         position: "right",
-        formatter: "{b}",
+        formatter: function (params) {
+          return params.data.name.length > 5
+            ? params.data.name.slice(0, 5) + "..."
+            : params.data.name;
+        },
         backgroundColor: "rgba(255, 255, 255, 0.85)",
         padding: [3, 8, 3, 8],
         borderColor: "#ddd",
@@ -287,7 +291,7 @@ const renderGraph = async () => {
         distance: 10,
         // 避免标签重叠
         overflow: "truncate",
-        width: 40,
+        width: 120,
       },
       // 鼠标悬停效果
       emphasis: {
@@ -327,8 +331,8 @@ const renderGraph = async () => {
     const lineWidth = edge.label && relationColors[edge.label] ? 2.5 : 2;
 
     return {
-      source: edge.source,
-      target: edge.target,
+      source: String(edge.source),
+      target: String(edge.target),
       label: {
         show: true,
         formatter: edge.label || "关系",
@@ -396,7 +400,7 @@ const renderGraph = async () => {
         layout: "force",
         data: nodes,
         links: edges,
-        roam: true,
+        roam: "scale",
         // 优化拖拽交互
         draggable: true,
         // 优化节点选择行为
@@ -412,7 +416,7 @@ const renderGraph = async () => {
           // 优化力导向布局参数
           repulsion: 500,
           gravity: 0.1,
-          edgeLength: 100,
+          edgeLength: 135,
           friction: 0.6,
           // 迭代次数
           iterations: 100,
