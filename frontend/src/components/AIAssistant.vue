@@ -1,8 +1,18 @@
 <template>
-  <div class="ai-assistant">
+  <div
+    class="ai-assistant"
+    ref="assistantRef"
+    @mousedown="startDrag"
+    @touchstart="startDrag"
+    style="cursor: move"
+  >
     <!-- 悬浮按钮 -->
     <div class="assistant-container">
-      <button class="assistant-btn" @click="toggleChat">
+      <button
+        class="assistant-btn"
+        @click="handleButtonClick"
+        style="cursor: pointer"
+      >
         <img src="/logo.svg" alt="成都理工大学" class="logo-icon" />
       </button>
       <span class="assistant-label">成小理</span>
@@ -55,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from "vue";
+import { ref, watch, nextTick, onMounted, onUnmounted } from "vue";
 import { askAI } from "../api/ai";
 
 const showChat = ref(false);
@@ -63,6 +73,15 @@ const userInput = ref("");
 const messages = ref([]);
 const loading = ref(false);
 const messagesContainer = ref(null);
+const assistantRef = ref(null);
+
+// 拖拽相关状态
+const isDragging = ref(false);
+const hasDragged = ref(false);
+const startX = ref(0);
+const startY = ref(0);
+const offsetX = ref(0);
+const offsetY = ref(0);
 
 // 预定义一些欢迎语
 const welcomeMessages = [
@@ -139,6 +158,94 @@ const scrollToBottom = () => {
 
 // 监听消息变化，自动滚动
 watch(messages, scrollToBottom, { deep: true });
+
+// 拖拽开始
+const startDrag = (e) => {
+  isDragging.value = true;
+  hasDragged.value = false;
+
+  // 处理鼠标和触摸事件
+  const clientX = e.type === "mousedown" ? e.clientX : e.touches[0].clientX;
+  const clientY = e.type === "mousedown" ? e.clientY : e.touches[0].clientY;
+
+  startX.value = clientX;
+  startY.value = clientY;
+
+  // 获取当前位置
+  const rect = assistantRef.value.getBoundingClientRect();
+  offsetX.value = clientX - rect.left;
+  offsetY.value = clientY - rect.top;
+
+  // 防止默认行为
+  e.preventDefault();
+};
+
+// 拖拽中
+const drag = (e) => {
+  if (!isDragging.value) return;
+
+  // 标记已经发生拖拽
+  hasDragged.value = true;
+
+  // 处理鼠标和触摸事件
+  const clientX = e.type === "mousemove" ? e.clientX : e.touches[0].clientX;
+  const clientY = e.type === "mousemove" ? e.clientY : e.touches[0].clientY;
+
+  // 计算新位置
+  const newX = clientX - offsetX.value;
+  const newY = clientY - offsetY.value;
+
+  // 限制在视口内
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const elementWidth = assistantRef.value.offsetWidth;
+  const elementHeight = assistantRef.value.offsetHeight;
+
+  const clampedX = Math.max(0, Math.min(newX, viewportWidth - elementWidth));
+  const clampedY = Math.max(0, Math.min(newY, viewportHeight - elementHeight));
+
+  // 更新位置
+  assistantRef.value.style.left = `${clampedX}px`;
+  assistantRef.value.style.top = `${clampedY}px`;
+  assistantRef.value.style.bottom = "auto";
+  assistantRef.value.style.right = "auto";
+
+  // 防止默认行为
+  e.preventDefault();
+};
+
+// 拖拽结束
+const stopDrag = () => {
+  isDragging.value = false;
+  // 延迟重置 hasDragged，确保点击事件能够正确判断
+  setTimeout(() => {
+    hasDragged.value = false;
+  }, 100);
+};
+
+// 按钮点击处理
+const handleButtonClick = () => {
+  // 只有在没有拖拽的情况下才触发 toggleChat
+  if (!hasDragged.value) {
+    toggleChat();
+  }
+};
+
+// 组件挂载时添加全局事件监听器
+onMounted(() => {
+  window.addEventListener("mousemove", drag);
+  window.addEventListener("mouseup", stopDrag);
+  window.addEventListener("touchmove", drag);
+  window.addEventListener("touchend", stopDrag);
+});
+
+// 组件卸载时移除全局事件监听器
+onUnmounted(() => {
+  window.removeEventListener("mousemove", drag);
+  window.removeEventListener("mouseup", stopDrag);
+  window.removeEventListener("touchmove", drag);
+  window.removeEventListener("touchend", stopDrag);
+});
 </script>
 
 <style scoped>

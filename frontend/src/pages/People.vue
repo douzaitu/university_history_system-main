@@ -14,12 +14,10 @@
           人物库 <span class="sub">dm.cdut.edu.cn</span>
         </div>
       </div>
-      <div class="actions">
-        <button class="icon" @click="handleSearch">🔍</button>
-      </div>
+      <div class="actions"></div>
     </div>
     <HeroBanner
-      image="/HomePage/peopel.jpg" 
+      image="/HomePage/peopel.jpg"
       title="数字记忆 · 人物库"
       :height="320"
       description="人物库收录与计算机与网络安全学院相关的教职工和校友，例如老师，知名校友等。"
@@ -89,7 +87,7 @@
       <!-- 知识图谱跳转链接 - 放在grid之后 -->
       <div class="knowledge-graph-link">
         <router-link to="/knowledge-graph" class="graph-link-btn">
-          🔍 知识图谱查询
+          知识图谱查询
         </router-link>
       </div>
     </div>
@@ -106,24 +104,44 @@ import { ref, computed, onMounted } from "vue";
 // 从人物简介中提取职位信息
 const extractPosition = (bio) => {
   if (!bio) return "未知职位";
-  
+
   // 定义职位关键词
   const positionKeywords = [
-    "教授", "副教授", "讲师", "助教", "博导", "硕导",
-    "研究员", "副研究员", "助理研究员",
-    "院长", "副院长", "系主任", "副主任",
-    "所长", "副所长", "主任", "副主任",
-    "党委书记", "副书记", "党委副书记",
-    "博士", "工学博士", "理学博士", "文学博士", "医学博士", "法学博士"
+    "教授",
+    "副教授",
+    "讲师",
+    "助教",
+    "博导",
+    "硕导",
+    "研究员",
+    "副研究员",
+    "助理研究员",
+    "院长",
+    "副院长",
+    "系主任",
+    "副主任",
+    "所长",
+    "副所长",
+    "主任",
+    "副主任",
+    "党委书记",
+    "副书记",
+    "党委副书记",
+    "博士",
+    "工学博士",
+    "理学博士",
+    "文学博士",
+    "医学博士",
+    "法学博士",
   ];
-  
+
   // 遍历关键词，查找第一个匹配的职位
   for (const keyword of positionKeywords) {
     if (bio.includes(keyword)) {
       return keyword;
     }
   }
-  
+
   return "未知职位";
 };
 
@@ -193,8 +211,8 @@ const handleSearch = async () => {
         name: entity.name,
         category: extractPosition(entity.description), // 从简介中提取职位信息
         bio: entity.description,
-        photo: entity.photo_url 
-          ? `http://localhost:8000/media/${entity.photo_url}` 
+        photo: entity.photo_url
+          ? `http://localhost:8000/media/${entity.photo_url}`
           : "/People/default.jpg",
         readCount: 0,
         lastUpdated: new Date().toISOString(),
@@ -226,7 +244,7 @@ const hasData = computed(() => peopleData.value && peopleData.value.length > 0);
 const uniqueCategories = computed(() => {
   if (!peopleData.value) return [];
   const categories = new Set(
-    peopleData.value.map((p) => p.category).filter(Boolean)
+    peopleData.value.map((p) => p.category).filter(Boolean),
   );
   return Array.from(categories).sort();
 });
@@ -257,7 +275,7 @@ const filteredAndSortedPeople = computed(() => {
     result = [...result].sort((a, b) => a.name.localeCompare(b.name));
   } else if (sortBy.value === "readCount") {
     result = [...result].sort(
-      (a, b) => (b.readCount || 0) - (a.readCount || 0)
+      (a, b) => (b.readCount || 0) - (a.readCount || 0),
     );
   }
 
@@ -278,15 +296,28 @@ const filteredAndSortedPeople = computed(() => {
 
 /* 添加微妙的背景纹理效果 */
 .page::before {
-  content: '';
+  content: "";
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at 20% 80%, rgba(74, 158, 255, 0.05) 0%, transparent 50%),
-              radial-gradient(circle at 80% 20%, rgba(74, 158, 255, 0.05) 0%, transparent 50%),
-              radial-gradient(circle at 40% 40%, rgba(74, 158, 255, 0.03) 0%, transparent 50%);
+  background:
+    radial-gradient(
+      circle at 20% 80%,
+      rgba(74, 158, 255, 0.05) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(74, 158, 255, 0.05) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 40% 40%,
+      rgba(74, 158, 255, 0.03) 0%,
+      transparent 50%
+    );
   z-index: -1;
   pointer-events: none;
 }
@@ -386,36 +417,39 @@ const filteredAndSortedPeople = computed(() => {
 
 .searchbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
-  margin: 24px 0 20px;
+  margin: 30px 0 24px;
   position: relative;
   gap: 12px;
   padding: 0 4px;
 }
 
 .search-input {
-  width: 320px;
-  max-width: 60vw;
-  padding: 12px 16px;
-  padding-right: 40px;
-  border-radius: 12px;
+  width: 400px;
+  max-width: 70vw;
+  padding: 14px 20px;
+  padding-right: 45px;
+  border-radius: 25px;
   border: 2px solid rgba(74, 158, 255, 0.2);
   background: white;
   color: #2d3748;
   outline: none;
-  font-size: 14px;
+  font-size: 16px;
+  font-family: "Microsoft YaHei", sans-serif;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 .search-input:focus {
   border-color: #4a9eff;
   background: white;
   box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
+  transform: translateY(-1px);
 }
 .search-input::placeholder {
   color: #94a3b8;
-  font-size: 14px;
+  font-size: 16px;
+  font-family: "Microsoft YaHei", sans-serif;
 }
 
 .clear-btn {
@@ -437,14 +471,15 @@ const filteredAndSortedPeople = computed(() => {
 }
 
 .search-btn {
-  padding: 12px 24px;
-  border-radius: 12px;
+  padding: 14px 28px;
+  border-radius: 25px;
   border: 2px solid #4a9eff;
   background: linear-gradient(135deg, #4a9eff 0%, #2a7fff 100%);
   color: #fff;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
+  font-family: "Microsoft YaHei", sans-serif;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(74, 158, 255, 0.3);
 }
@@ -461,14 +496,26 @@ const filteredAndSortedPeople = computed(() => {
 @media (max-width: 768px) {
   .searchbar {
     justify-content: center;
-    margin: 16px 0;
+    margin: 20px 0;
   }
-  
+
   .search-input {
-    width: 280px;
+    width: 320px;
     max-width: 70vw;
+    font-size: 14px;
+    padding: 12px 16px;
+    padding-right: 40px;
   }
-  
+
+  .search-input::placeholder {
+    font-size: 14px;
+  }
+
+  .search-btn {
+    font-size: 14px;
+    padding: 12px 24px;
+  }
+
   .clear-btn {
     right: 90px;
   }
@@ -479,18 +526,18 @@ const filteredAndSortedPeople = computed(() => {
     flex-direction: column;
     gap: 10px;
   }
-  
+
   .search-input {
     width: 100%;
     max-width: none;
   }
-  
+
   .clear-btn {
     right: auto;
     position: static;
     align-self: flex-end;
   }
-  
+
   .search-btn {
     width: 100%;
   }
@@ -503,17 +550,18 @@ const filteredAndSortedPeople = computed(() => {
   margin-bottom: 24px;
   flex-wrap: wrap;
   padding: 0 4px;
-  background: white;
-  border-radius: 16px;
-  padding: 16px 20px;
-  border: 1px solid rgba(74, 158, 255, 0.1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  max-width: 1300px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 60px;
+}
+
 .filter-label {
   color: #64748b;
   font-size: 14px;
   font-weight: 500;
   margin-right: 8px;
-} white-space: nowrap;
+  white-space: nowrap;
 }
 .sort-select,
 .category-select {
@@ -542,32 +590,52 @@ const filteredAndSortedPeople = computed(() => {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 28px;
-  margin-top: 24px;
-  padding: 0 4px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 30px;
+  margin-top: 40px;
+  padding: 0 60px;
+  max-width: 1300px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* 响应式网格布局 */
+@media (max-width: 1400px) {
+  .grid {
+    padding: 0 50px;
+  }
+}
+
 @media (max-width: 1200px) {
   .grid {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 25px;
+    padding: 0 40px;
+  }
+}
+
+@media (max-width: 992px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 0 30px;
   }
 }
 
 @media (max-width: 768px) {
   .grid {
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-    gap: 20px;
-    margin-top: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    margin-top: 30px;
+    padding: 0 20px;
   }
 }
 
 @media (max-width: 480px) {
   .grid {
-    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    padding: 0 16px;
   }
 }
 
@@ -613,7 +681,8 @@ const filteredAndSortedPeople = computed(() => {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.8;
     transform: scale(1);
   }
@@ -688,11 +757,11 @@ const filteredAndSortedPeople = computed(() => {
     padding: 12px 16px;
     margin-bottom: 16px;
   }
-  
+
   .filter-label {
     font-size: 13px;
   }
-  
+
   .sort-select,
   .category-select {
     padding: 8px 12px;
@@ -707,17 +776,17 @@ const filteredAndSortedPeople = computed(() => {
     align-items: stretch;
     gap: 12px;
   }
-  
+
   .filter-label {
     margin-right: 0;
     margin-bottom: 4px;
   }
-  
+
   .sort-select,
   .category-select {
     min-width: unset;
   }
-  
+
   .data-count {
     margin-left: 0;
     text-align: center;
@@ -763,7 +832,7 @@ const filteredAndSortedPeople = computed(() => {
     margin-top: 30px;
     margin-bottom: 40px;
   }
-  
+
   .graph-link-btn {
     padding: 12px 28px;
     font-size: 15px;
@@ -785,20 +854,20 @@ const filteredAndSortedPeople = computed(() => {
     height: 70px;
     padding: 0 20px;
   }
-  
+
   .logo {
     width: 40px;
     height: 40px;
   }
-  
+
   .university-name {
     font-size: 14px;
   }
-  
+
   .system-name {
     font-size: 12px;
   }
-  
+
   .site-title {
     font-size: 16px;
   }
@@ -810,32 +879,32 @@ const filteredAndSortedPeople = computed(() => {
     height: 60px;
     flex-wrap: wrap;
   }
-  
+
   .logo-section {
     gap: 12px;
   }
-  
+
   .logo {
     width: 36px;
     height: 36px;
   }
-  
+
   .university-name {
     font-size: 13px;
   }
-  
+
   .system-name {
     font-size: 11px;
   }
-  
+
   .nav-section {
     gap: 16px;
   }
-  
+
   .site-title {
     font-size: 14px;
   }
-  
+
   .site-title .sub {
     display: none;
   }
@@ -849,12 +918,12 @@ const filteredAndSortedPeople = computed(() => {
     gap: 12px;
     align-items: flex-start;
   }
-  
+
   .nav-section {
     width: 100%;
     justify-content: space-between;
   }
-  
+
   .actions {
     width: 100%;
     justify-content: flex-end;

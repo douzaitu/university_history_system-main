@@ -14,9 +14,7 @@
           机构库 <span class="sub">dm.cdut.edu.cn</span>
         </div>
       </div>
-      <div class="actions">
-        <button class="icon" @click="handleSearch">🔍</button>
-      </div>
+      <div class="actions"></div>
     </div>
     <HeroBanner
       image="/HomePage/机构.jpg"
@@ -172,7 +170,7 @@ const handleSearch = async () => {
       console.log(
         "机构搜索成功，找到数据:",
         organizationsData.value.length,
-        "条"
+        "条",
       );
     } else {
       // 如果没有搜索结果，显示提示但不清空数据
@@ -195,14 +193,14 @@ const clearSearch = () => {
 
 // 计算属性：是否有数据
 const hasData = computed(
-  () => organizationsData.value && organizationsData.value.length > 0
+  () => organizationsData.value && organizationsData.value.length > 0,
 );
 
 // 计算属性：唯一的类别列表
 const uniqueCategories = computed(() => {
   if (!organizationsData.value) return [];
   const categories = new Set(
-    organizationsData.value.map((p) => p.category).filter(Boolean)
+    organizationsData.value.map((p) => p.category).filter(Boolean),
   );
   return Array.from(categories).sort();
 });
@@ -237,7 +235,7 @@ const filteredAndSortedOrganizations = computed(() => {
     result = [...result].sort((a, b) => a.name.localeCompare(b.name));
   } else if (sortBy.value === "readCount") {
     result = [...result].sort(
-      (a, b) => (b.readCount || 0) - (a.readCount || 0)
+      (a, b) => (b.readCount || 0) - (a.readCount || 0),
     );
   }
 
@@ -248,10 +246,10 @@ const filteredAndSortedOrganizations = computed(() => {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: linear-gradient(#2c2f30, #1e2122);
+  background: #f8fafc;
   padding: 0;
   box-sizing: border-box;
-  color: #fff;
+  color: #2d3748;
 }
 
 .topbar {
@@ -260,9 +258,9 @@ const filteredAndSortedOrganizations = computed(() => {
   justify-content: space-between;
   padding: 0 24px;
   height: 80px;
-  background: rgba(0, 0, 0, 0.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  background: white;
+  border-bottom: 1px solid rgba(74, 158, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .logo-section {
@@ -286,12 +284,12 @@ const filteredAndSortedOrganizations = computed(() => {
 .university-name {
   font-size: 16px;
   font-weight: 700;
-  color: #ffffff;
+  color: #2d3748;
 }
 
 .system-name {
   font-size: 14px;
-  color: #b8c2cc;
+  color: #64748b;
 }
 
 .nav-section {
@@ -301,26 +299,28 @@ const filteredAndSortedOrganizations = computed(() => {
 }
 
 .back {
-  color: #cfe9ff;
+  color: #4a9eff;
   text-decoration: none;
   font-size: 14px;
   transition: color 0.2s;
+  font-weight: 500;
 }
 
 .back:hover {
-  color: #4a9eff;
+  color: #2a7fff;
+  text-decoration: underline;
 }
 
 .site-title {
   font-size: 18px;
   font-weight: 600;
-  color: #ffffff;
+  color: #2d3748;
 }
 
 .site-title .sub {
   font-size: 12px;
   font-weight: 400;
-  color: #8a949e;
+  color: #94a3b8;
   margin-left: 8px;
 }
 
@@ -335,7 +335,7 @@ const filteredAndSortedOrganizations = computed(() => {
   border: none;
   font-size: 18px;
   cursor: pointer;
-  color: #b8c2cc;
+  color: #64748b;
   transition: color 0.2s;
   padding: 8px;
   border-radius: 4px;
@@ -348,99 +348,195 @@ const filteredAndSortedOrganizations = computed(() => {
 
 .searchbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
-  margin: 10px 0 16px;
+  margin: 30px 0 24px;
   position: relative;
-  gap: 8px;
+  gap: 12px;
+  padding: 0 4px;
 }
 
 .search-input {
-  width: 260px;
-  max-width: 50vw;
-  padding: 8px 12px;
-  padding-right: 32px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(0, 0, 0, 0.35);
-  color: #fff;
+  width: 400px;
+  max-width: 70vw;
+  padding: 14px 20px;
+  padding-right: 45px;
+  border-radius: 25px;
+  border: 2px solid rgba(74, 158, 255, 0.2);
+  background: white;
+  color: #2d3748;
   outline: none;
+  font-size: 16px;
+  font-family: "Microsoft YaHei", sans-serif;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 .search-input:focus {
   border-color: #4a9eff;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
+  transform: translateY(-1px);
 }
 .search-input::placeholder {
-  color: #cbd3d6;
+  color: #94a3b8;
+  font-size: 16px;
+  font-family: "Microsoft YaHei", sans-serif;
 }
 
 .clear-btn {
   position: absolute;
-  right: 70px;
-  background: none;
-  border: none;
-  color: #cbd3d6;
-  font-size: 18px;
+  right: 100px;
+  background: rgba(74, 158, 255, 0.1);
+  border: 1px solid rgba(74, 158, 255, 0.2);
+  color: #64748b;
+  font-size: 16px;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
 }
 .clear-btn:hover {
-  color: #fff;
+  color: #4a9eff;
+  background: rgba(74, 158, 255, 0.2);
+  border-color: rgba(74, 158, 255, 0.3);
 }
 
 .search-btn {
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(74, 158, 255, 0.8);
+  padding: 14px 28px;
+  border-radius: 25px;
+  border: 2px solid #4a9eff;
+  background: linear-gradient(135deg, #4a9eff 0%, #2a7fff 100%);
   color: #fff;
   cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: "Microsoft YaHei", sans-serif;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.3);
 }
 .search-btn:hover {
-  background: rgba(74, 158, 255, 1);
+  background: linear-gradient(135deg, #2a7fff 0%, #1a6fff 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(74, 158, 255, 0.4);
+}
+.search-btn:active {
+  transform: translateY(0);
 }
 
 .filter-options {
   display: flex;
-  gap: 16px;
+  gap: 20px;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
+  padding: 0 4px;
+  max-width: 1300px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 60px;
 }
 .filter-label {
-  color: #cbd3d6;
+  color: #64748b;
   font-size: 14px;
+  font-weight: 500;
+  margin-right: 8px;
+  white-space: nowrap;
 }
 .sort-select,
 .category-select {
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(0, 0, 0, 0.35);
-  color: #fff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 2px solid rgba(74, 158, 255, 0.2);
+  background: white;
+  color: #2d3748;
   outline: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+.sort-select:hover,
+.category-select:hover {
+  border-color: rgba(74, 158, 255, 0.3);
+  background: #f8fafc;
+}
+.sort-select:focus,
+.category-select:focus {
+  border-color: #4a9eff;
+  box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
-  margin-top: 8px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 30px;
+  margin-top: 40px;
+  padding: 0 60px;
+  max-width: 1300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 响应式网格布局 */
+@media (max-width: 1400px) {
+  .grid {
+    padding: 0 50px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 25px;
+    padding: 0 40px;
+  }
+}
+
+@media (max-width: 992px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 0 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    margin-top: 30px;
+    padding: 0 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    padding: 0 16px;
+  }
 }
 
 .loading {
   text-align: center;
-  padding: 60px 20px;
-  color: #cbd3d6;
+  padding: 80px 20px;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
 }
 
 .loading-spinner {
-  border: 3px solid #f3f3f3;
+  border: 3px solid #f1f5f9;
   border-top: 3px solid #4a9eff;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   animation: spin 1s linear infinite;
-  margin: 0 auto 16px;
+  margin: 0 auto;
+  box-shadow: 0 2px 8px rgba(74, 158, 255, 0.2);
 }
 
 @keyframes spin {
@@ -454,25 +550,42 @@ const filteredAndSortedOrganizations = computed(() => {
 
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
-  color: #cbd3d6;
+  padding: 80px 20px;
+  color: #64748b;
   font-size: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
 
 .retry-btn {
-  margin-top: 16px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: 1px solid #4a9eff;
-  background: transparent;
+  margin-top: 8px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 2px solid #4a9eff;
+  background: white;
   color: #4a9eff;
   cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.retry-btn:hover {
+  background: #4a9eff;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.3);
 }
 
 .data-count {
   margin-left: auto;
-  color: #cbd3d6;
+  color: #64748b;
   font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 /* 响应式设计 */
@@ -481,22 +594,26 @@ const filteredAndSortedOrganizations = computed(() => {
     height: 70px;
     padding: 0 20px;
   }
-  
+
   .logo {
     width: 40px;
     height: 40px;
   }
-  
+
   .university-name {
     font-size: 14px;
   }
-  
+
   .system-name {
     font-size: 12px;
   }
-  
+
   .site-title {
     font-size: 16px;
+  }
+
+  .filter-options {
+    padding: 12px 16px;
   }
 }
 
@@ -504,56 +621,85 @@ const filteredAndSortedOrganizations = computed(() => {
   .topbar {
     padding: 0 16px;
     height: 60px;
-    flex-wrap: wrap;
   }
-  
+
   .logo-section {
     gap: 12px;
   }
-  
+
   .logo {
     width: 36px;
     height: 36px;
   }
-  
+
   .university-name {
     font-size: 13px;
   }
-  
+
   .system-name {
     font-size: 11px;
   }
-  
+
   .nav-section {
     gap: 16px;
   }
-  
+
   .site-title {
     font-size: 14px;
   }
-  
+
   .site-title .sub {
     display: none;
+  }
+
+  .filter-options {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .sort-select,
+  .category-select {
+    width: 100%;
+  }
+
+  .data-count {
+    margin-left: 0;
+    width: 100%;
+    text-align: right;
   }
 }
 
 @media (max-width: 480px) {
   .topbar {
-    height: auto;
-    padding: 12px 16px;
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
+    padding: 0 16px;
   }
-  
+
   .nav-section {
-    width: 100%;
-    justify-content: space-between;
+    gap: 12px;
   }
-  
-  .actions {
-    width: 100%;
-    justify-content: flex-end;
+
+  .back {
+    font-size: 13px;
+  }
+
+  .site-title {
+    font-size: 13px;
+  }
+
+  .filter-options {
+    padding: 10px 14px;
+  }
+
+  .filter-label {
+    font-size: 13px;
+  }
+
+  .sort-select,
+  .category-select {
+    font-size: 13px;
+    padding: 8px 12px;
   }
 }
 </style>

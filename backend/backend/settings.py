@@ -13,8 +13,8 @@ DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
 
 # 安全设置
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-your-random-secret-key-here-make-it-long')
-DEBUG = True
-ALLOWED_HOSTS = ['*']
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
 # 安装的app
 INSTALLED_APPS = [
@@ -63,8 +63,12 @@ MIDDLEWARE = [
 # 数据库配置
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': os.getenv('DB_NAME', 'school_history_db'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'admin123'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
@@ -97,7 +101,7 @@ REST_FRAMEWORK = {
 }
 
 # 跨域设置
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True') == 'True'
 CORS_ALLOW_CREDENTIALS = True
 
 # 静态文件

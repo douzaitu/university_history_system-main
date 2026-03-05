@@ -47,7 +47,7 @@ const router = createRouter({
 
 router.afterEach((to) => {
   const base = "数字记忆";
-  document.title = `${base} · ${to.meta?.title || "CQU"}`;
+  document.title = `${base} · ${to.meta?.title || "CDUT"}`;
 });
 
 export default router;

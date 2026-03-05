@@ -15,7 +15,6 @@
         </div>
       </div>
       <div class="actions">
-        <button class="icon" @click="handleSearch">🔍</button>
         <button class="icon" @click="toggleFavorite">
           {{ isFavorite ? "❤️" : "🤍" }}
         </button>
@@ -252,10 +251,10 @@ const fetchPersonDetail = async (id) => {
         name: pureName,
         category: extractPosition(response.description), // 从简介中提取职位
         bio: response.description,
-        // 修复这里：使用实际的photo_url，如果没有不显示的图片
+        // 修复这里：使用实际的photo_url，如果没有显示默认图片
         photo: response.photo_url
           ? `http://localhost:8000/media/${response.photo_url}`
-          : null,
+          : "/People/default.jpg",
         readCount: 0,
         lastUpdated: new Date().toISOString(),
         dataVersion: "1.0",
@@ -419,9 +418,9 @@ const relatedPeople = computed(() => {
 
 // 图片加载错误处理
 const handleImageError = (event) => {
-  // 图片加载失败时，直接隐藏图片，而不是显示默认图
+  // 图片加载失败时，显示默认图片
   if (person.value) {
-    person.value.photo = null;
+    person.value.photo = "/People/default.jpg";
   }
 };
 
@@ -816,6 +815,8 @@ const navigateToNext = async () => {
   display: flex;
   margin-bottom: 24px;
   align-items: flex-start;
+  flex-wrap: wrap;
+  word-break: break-word;
 }
 
 .info-label {
@@ -831,11 +832,18 @@ const navigateToNext = async () => {
   font-size: 15px;
   font-weight: 500;
   flex: 1;
+  word-wrap: break-word;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .bio-content {
   line-height: 1.8;
   text-align: justify;
+  word-wrap: break-word;
+  white-space: normal;
+  overflow-wrap: break-word;
+  overflow: hidden;
 }
 
 /* 照片区域 */
@@ -850,13 +858,15 @@ const navigateToNext = async () => {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  height: 320px;
 }
 
 .person-photo {
   width: 100%;
-  height: 240px;
+  height: 320px;
   object-fit: cover;
   display: block;
+  object-position: top;
 }
 
 /* 照片导航按钮 */
@@ -982,20 +992,6 @@ const navigateToNext = async () => {
 
 /* 响应式设计 */
 @media (max-width: 1024px) {
-  .content {
-    padding: 24px 20px;
-  }
-
-  .person-info {
-    gap: 32px;
-  }
-
-  .info-right {
-    width: 200px;
-  }
-}
-
-@media (max-width: 1024px) {
   .topbar {
     height: 70px;
     padding: 0 20px;
@@ -1016,6 +1012,28 @@ const navigateToNext = async () => {
 
   .site-title {
     font-size: 16px;
+  }
+
+  .content {
+    padding: 24px 20px;
+  }
+
+  .person-info {
+    gap: 32px;
+  }
+
+  .info-right {
+    width: 200px;
+  }
+
+  .photo-section,
+  .person-photo {
+    height: 280px;
+  }
+
+  .person-photo {
+    object-fit: cover;
+    object-position: top;
   }
 }
 
@@ -1067,16 +1085,26 @@ const navigateToNext = async () => {
     font-size: 28px;
   }
 
-  /* 在平板设备上，信息和照片垂直排列 */
+  /* 在平板设备上，保持左侧文字右侧图片的布局 */
   .person-info {
-    flex-direction: column;
+    flex-direction: row;
     gap: 24px;
+    flex-wrap: wrap;
   }
 
   .info-right {
-    width: 100%;
-    max-width: 240px;
-    margin: 0 auto;
+    width: 200px;
+    flex-shrink: 0;
+  }
+
+  .photo-section,
+  .person-photo {
+    height: 240px;
+  }
+
+  .person-photo {
+    object-fit: cover;
+    object-position: top;
   }
 
   /* 操作栏在平板设备上垂直排列 */
@@ -1108,6 +1136,18 @@ const navigateToNext = async () => {
 
   .name {
     font-size: 24px;
+  }
+
+  /* 在手机设备上，信息和照片垂直排列 */
+  .person-info {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .info-right {
+    width: 100%;
+    max-width: 240px;
+    margin: 0 auto;
   }
 
   .info-item {

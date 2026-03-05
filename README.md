@@ -32,6 +32,7 @@ django-cors-headers==4.9.0
 
 # 数据库和外部服务
 
+psycopg2-binary>=2.9.0
 neo4j==6.0.3
 requests==2.32.5
 python-dotenv==1.1.0
@@ -89,6 +90,12 @@ python manage.py qcluster
 ## 前端启动
 
 1.进入前端目录 cd frontend 2.启动前端 npm run dev
+
+## PostgreSQL数据库配置
+
+1. 安装PostgreSQL 17+
+2. 创建数据库 `school_history_db`
+3. 创建用户 `postgres` 密码 `admin123` (或者更新 .env 文件中的配置)
 
 ## Neo4j数据库配置
 

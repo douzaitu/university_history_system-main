@@ -13,51 +13,92 @@
           首页 <span class="sub">dm.cdut.edu.cn</span>
         </div>
       </div>
-      <div class="actions">
-        <button class="icon" @click="handleSearch">🔍</button>
-      </div>
+      <div class="actions"></div>
     </div>
 
     <div class="main-content">
       <h1 class="page-title">校史馆数字记忆 · 首页</h1>
 
       <div class="card-row">
-        <Card title="人物" desc="以知识图谱形式收录计算机与网络安全学院相关人物" count="41" to="/people" image="/HomePage/peopel.jpg" />
-        <Card title="地点" desc="收录与计算机与网络安全学院相关的地理位置、建筑等" count="1" to="/places" image="/HomePage/place.jpg" />
-        <Card title="学科" desc="学科库为用户提供了解计算机与网络安全学院学科的信息" count="1" to="/subjects" image="/HomePage/subject.gif" />
-        <Card title="机构" desc="收录与计算机与网络安全学院相关的组织和机构资料" count="1" to="/organizations" image="/HomePage/机构.jpg" />
-        <Card title="事件" desc="记录与计算机与网络安全学院相关的重要事件" count="1" to="/events" image="/HomePage/事件.jpg" />
+        <Card
+          title="人物"
+          desc="以知识图谱形式收录计算机与网络安全学院相关人物"
+          count="41"
+          to="/people"
+          image="/HomePage/peopel.jpg"
+        />
+        <Card
+          title="地点"
+          desc="收录与计算机与网络安全学院相关的地理位置、建筑等"
+          count="1"
+          to="/places"
+          image="/HomePage/place.jpg"
+        />
+        <Card
+          title="学科"
+          desc="学科库为用户提供了解计算机与网络安全学院学科的信息"
+          count="1"
+          to="/subjects"
+          image="/HomePage/subject.gif"
+        />
+        <Card
+          title="机构"
+          desc="收录与计算机与网络安全学院相关的组织和机构资料"
+          count="1"
+          to="/organizations"
+          image="/HomePage/机构.jpg"
+        />
+        <Card
+          title="事件"
+          desc="记录与计算机与网络安全学院相关的重要事件"
+          count="1"
+          to="/events"
+          image="/HomePage/事件.jpg"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import Card from './components/Card.vue'
+import Card from "./components/Card.vue";
 </script>
 
 <style scoped>
-.home{
-  min-height:100vh;
-  padding:0;
+.home {
+  min-height: 100vh;
+  padding: 0;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
   position: relative;
   overflow-x: hidden;
-  box-sizing:border-box;
+  box-sizing: border-box;
   color: #2d3748;
 }
 
 /* 添加微妙的背景纹理效果 */
 .home::before {
-  content: '';
+  content: "";
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at 20% 80%, rgba(74, 158, 255, 0.05) 0%, transparent 50%),
-              radial-gradient(circle at 80% 20%, rgba(74, 158, 255, 0.05) 0%, transparent 50%),
-              radial-gradient(circle at 40% 40%, rgba(74, 158, 255, 0.03) 0%, transparent 50%);
+  background:
+    radial-gradient(
+      circle at 20% 80%,
+      rgba(74, 158, 255, 0.05) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(74, 158, 255, 0.05) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 40% 40%,
+      rgba(74, 158, 255, 0.03) 0%,
+      transparent 50%
+    );
   z-index: -1;
   pointer-events: none;
 }
@@ -171,20 +212,20 @@ import Card from './components/Card.vue'
     height: 70px;
     padding: 0 20px;
   }
-  
+
   .logo {
     width: 40px;
     height: 40px;
   }
-  
+
   .university-name {
     font-size: 14px;
   }
-  
+
   .system-name {
     font-size: 12px;
   }
-  
+
   .site-title {
     font-size: 16px;
   }
@@ -196,44 +237,44 @@ import Card from './components/Card.vue'
     height: 60px;
     flex-wrap: wrap;
   }
-  
+
   .logo-section {
     gap: 12px;
   }
-  
+
   .logo {
     width: 36px;
     height: 36px;
   }
-  
+
   .university-name {
     font-size: 13px;
   }
-  
+
   .system-name {
     font-size: 11px;
   }
-  
+
   .nav-section {
     gap: 16px;
   }
-  
+
   .site-title {
     font-size: 14px;
   }
-  
+
   .site-title .sub {
     display: none;
   }
-  
+
   .main-content {
     padding: 20px 16px;
   }
-  
+
   .page-title {
     font-size: 20px;
   }
-  
+
   .card-row {
     gap: 16px;
     padding: 16px;
@@ -248,25 +289,25 @@ import Card from './components/Card.vue'
     gap: 12px;
     align-items: flex-start;
   }
-  
+
   .nav-section {
     width: 100%;
     justify-content: space-between;
   }
-  
+
   .actions {
     width: 100%;
     justify-content: flex-end;
   }
-  
+
   .main-content {
     padding: 16px 12px;
   }
-  
+
   .page-title {
     font-size: 18px;
   }
-  
+
   .card-row {
     gap: 12px;
     padding: 12px;

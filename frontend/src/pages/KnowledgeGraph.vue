@@ -15,9 +15,7 @@
           知识图谱 <span class="sub">dm.cdut.edu.cn</span>
         </div>
       </div>
-      <div class="actions">
-        <button class="icon" @click="handleSearch">🔍</button>
-      </div>
+      <div class="actions"></div>
     </div>
 
     <!-- 搜索区域 -->
@@ -152,7 +150,7 @@ const handleSearchInput = async () => {
 
   try {
     console.log("开始搜索:", query);
-    
+
     // 使用封装的API替代直接fetch
     const data = await searchTeachers(query);
     console.log("搜索返回数据:", data);
