@@ -1,6 +1,6 @@
 ## 项目说明
 
-校史知识图谱管理系统是一个集成了知识图谱数据管理、可视化展示和AI智能助手功能的现代化Web应用系统。该系统采用前后端分离架构，后端基于Django REST Framework构建，前端使用Vue 3开发，通过Neo4j存储和管理知识图谱数据，并集成DeepSeek AI提供智能问答服务。
+校史知识图谱管理系统是一个集成了知识图谱数据管理、可视化展示和AI智能助手功能的现代化Web应用系统。该系统采用前后端分离架构，后端基于Django REST Framework构建，前端使用Vue 3开发，通过Neo4j和PostgreSQL存储和管理知识图谱数据，并集成DeepSeek AI提供智能问答服务。
 
 ## 核心功能
 
@@ -17,6 +17,7 @@ Python 3.8+
 Node.js 14+
 Neo4j Desktop
 Git
+PostgreSQL 17+
 
 ## 安装依赖
 
@@ -83,8 +84,7 @@ university_history_system/
 
 ## 后端启动
 
-1.进入后端目录 cd backend 
-2.激活虚拟环境 代码下载目录\university_history_system-main\venv\Scripts\activate 3.启动后端 python manage.py runserver
+1.进入后端目录 cd backend 2.激活虚拟环境 代码下载目录\university_history_system-main\venv\Scripts\activate 3.启动后端 python manage.py runserver
 python manage.py qcluster
 
 ## 前端启动
@@ -95,7 +95,6 @@ python manage.py qcluster
 
 1. 安装PostgreSQL 17+
 2. 创建数据库 `school_history_db`
-3. 创建用户 `postgres` 密码 `admin123` (或者更新 .env 文件中的配置)
 
 ## Neo4j数据库配置
 
@@ -103,16 +102,15 @@ python manage.py qcluster
 打开Neo4j Desktop
 创建一个新的数据库实例
 设置数据库名称（如：school-history）
-设置密码为：12345678
+设置密码
 启动数据库2.验证连接
 打开浏览器访问：http://localhost:7474
-用户名：neo4j
-密码：12345678
+输入用户名和密码
 成功登录后表示Neo4j已正常启动
 
 ## 启动顺序
 
-1.启动Neo4j数据库2.启动Django后端服务器3.启动Vue前端服务器
+1.启动Neo4j,PostgreSQL数据库2.启动Django后端服务器3.启动Vue前端服务器
 
 ## 网站访问
 
@@ -120,5 +118,7 @@ python manage.py qcluster
 后端访问：http://127.0.0.1:8000/admin/
 后端管理员身份信息：
 用户名：admin
-密码admin123456
+密码admin123
 Neo4j访问：http://localhost:7474/
+
+更新 .env.example 文件中的配置,修改完成了文件名改为.env
