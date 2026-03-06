@@ -17,6 +17,7 @@ def sync_entity_task(entity_id, created=False):
         entity_type = entity.entity_type
         description = entity.description or ""
         photo_url = entity.photo_url or ""
+        is_primary = entity.is_primary  # 获取新增是否核心字段
         
         # 构建 Cypher 查询
         # 使用 MERGE 更加稳健，既能处理新建也能处理更新
@@ -26,7 +27,8 @@ def sync_entity_task(entity_id, created=False):
         SET n.name = $name, 
             n.type = $type, 
             n.description = $description,
-            n.photo_url = $photo_url
+            n.photo_url = $photo_url,
+            n.is_primary = $is_primary
         """
             
         params = {
@@ -34,7 +36,8 @@ def sync_entity_task(entity_id, created=False):
             "name": name,
             "type": entity_type,
             "description": description,
-            "photo_url": photo_url
+            "photo_url": photo_url,
+            "is_primary": is_primary
         }
         
         Neo4jConnection.query(query, params)

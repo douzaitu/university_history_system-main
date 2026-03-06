@@ -6,14 +6,14 @@ class DocumentUploadSerializer(serializers.ModelSerializer):
     """文档上传专用的序列化器"""
     class Meta:
         model = Document
-        fields = ['id', 'title', 'file', 'file_type']
+        fields = ['id', 'title', 'file', 'file_type', 'content_category']
     
     def validate_file(self, value):
         """验证上传的文件"""
-        # 检查文件大小（限制为50MB）
-        max_size = 50 * 1024 * 1024
+        # 检查文件大小（考虑到包含图片的Excel较大，限制放宽至100MB）
+        max_size = 100 * 1024 * 1024
         if value.size > max_size:
-            raise serializers.ValidationError("文件大小不能超过50MB")
+            raise serializers.ValidationError("文件大小不能超过100MB")
         
         # 检查文件类型
         allowed_types = ['pdf', 'doc', 'docx', 'xlsx', 'xls']

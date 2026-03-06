@@ -24,6 +24,12 @@ class EntityViewSet(viewsets.ModelViewSet):
         entity_type = self.request.query_params.get('type')
         if entity_type:
             queryset = queryset.filter(entity_type=entity_type)
+
+        # 支持按是否核心过滤
+        is_primary = self.request.query_params.get('is_primary')
+        if is_primary:
+            is_primary_bool = is_primary.lower() == 'true'
+            queryset = queryset.filter(is_primary=is_primary_bool)
             
         return queryset
     

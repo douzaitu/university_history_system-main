@@ -13,6 +13,12 @@ class Entity(models.Model):
     entity_type = models.CharField(max_length=20, choices=ENTITY_TYPES)
     description = models.TextField(blank=True)
     photo_url = models.URLField(blank=True)  # 新增照片URL字段
+    
+    # 新增：是否为核心实体（用于前端列表展示筛选）
+    # True: 在对应类型的列表页显示（如“人物库”）
+    # False: 仅作为关系节点存在（如“毕业院校”），不显示在列表页
+    is_primary = models.BooleanField(default=False, verbose_name="是否核心实体")
+    
     source_documents = models.ManyToManyField('documents.Document', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     

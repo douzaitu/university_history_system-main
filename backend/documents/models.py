@@ -16,6 +16,16 @@ class Document(models.Model):
         ('word', 'Word文档'),
     ]
     
+    # 新增：文档内容分类（决定提取的主要实体类型）
+    CONTENT_CATEGORY_CHOICES = [
+        ('general', '通用文档'), # 默认，不特殊标记任何实体
+        ('person', '人物档案'),
+        ('event', '校史事件'),
+        ('organization', '机构介绍'),
+        ('location', '校园地图'),
+        ('subject', '学科建设'),
+    ]
+
     STATUS_CHOICES = [
         ('pending', '---'), # 初始状态为空白
         ('processing', '处理中'),
@@ -27,6 +37,9 @@ class Document(models.Model):
     content = models.TextField(blank=True)
     file = models.FileField(upload_to=document_upload_path)
     file_type = models.CharField(max_length=10, choices=DOCUMENT_TYPES)
+    # 新增字段：文档内容分类
+    content_category = models.CharField(max_length=20, choices=CONTENT_CATEGORY_CHOICES, default='general')
+    
     uploader = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     upload_time = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')

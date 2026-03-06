@@ -7,8 +7,9 @@ from .serializers import DocumentUploadSerializer, DocumentDetailSerializer, Doc
 
 class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
-    # 根据需要调整权限，这里示例为 AllowAny，实际项目建议 IsAuthenticated
-    permission_classes = [permissions.AllowAny]
+    # 修改为 IsAuthenticated：只有登录用户才能调用这些 API 读取或上传文件
+    # 这不会影响 Django Admin 后台的使用，因为后台走的是另一套验证机制
+    permission_classes = [permissions.IsAuthenticated]
     
     def get_serializer_class(self):
         """根据动作选择不同的序列化器"""

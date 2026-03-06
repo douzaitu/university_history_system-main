@@ -87,7 +87,9 @@ class DocumentProcessor:
             # A. 更新/创建 人物实体 (SQLite -> Signal -> Neo4j)
             update_defaults = {
                 'entity_type': 'person',  
-                'description': intro      
+                'description': intro,
+                # 如果当前文档被标记为"人物档案" (person)，则这里提取出的导师就是核心实体
+                'is_primary': (document.content_category == 'person')
             }
             
             # 如果这行有对应的图片，保存并更新
@@ -112,7 +114,7 @@ class DocumentProcessor:
                 
                 # C. 保存生成的三元组
                 for head, relation, tail in triples:
-                    cls._save_triple(head, relation, tail)
+                    cls._save_triple(head, relation, tail, document)
                     triples_count += 1
             
             processed_count += 1
@@ -223,12 +225,16 @@ class DocumentProcessor:
         return triples
 
     @classmethod
-    def _save_triple(cls, head, relation, tail):
+    def _save_triple(cls, head, relation, tail, document):
         """保存三元组 (Auto-synced to Neo4j via Signals)"""
         try:
             src, _ = Entity.objects.get_or_create(
                 name=head, 
-                defaults={'entity_type': 'person'}
+                defaults={
+                    'entity_type': 'person',
+                    # 如果这篇文档是人物档案，那作为三元组头实体的"导师"自然是核心
+                    'is_primary': (document.content_category == 'person')
+                }
             )
             
             # Simple Entity Type Inference
@@ -244,7 +250,11 @@ class DocumentProcessor:
 
             tgt, _ = Entity.objects.get_or_create(
                 name=tail, 
-                defaults={'entity_type': tgt_type}
+                defaults={
+                    'entity_type': tgt_type,
+                    # 关联出来的实体（如清华大学），默认不是核心，除非专门上传了"机构介绍"文档
+                    'is_primary': False 
+                }
             )
             
             # 修改逻辑：只要源和目标相同，就更新关系类型，而不是新建

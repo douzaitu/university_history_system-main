@@ -13,7 +13,7 @@ export function searchTeachers(query) {
   return request({
     url: "/kg/search/",
     method: "get",
-    params: { q: query }
+    params: { q: query },
   });
 }
 
@@ -21,7 +21,7 @@ export function searchTeachers(query) {
 export function getTeacherGraph(teacherName) {
   return request({
     url: `/kg/teacher/${encodeURIComponent(teacherName)}/`,
-    method: "get"
+    method: "get",
   });
 }
 
@@ -75,10 +75,17 @@ export function getDocuments() {
 }
 
 // 按类型获取实体
-export function getEntitiesByType(type) {
+// 默认只获取核心实体(isPrimary=true)，避免列表页显示过多无关节点
+export function getEntitiesByType(type, isPrimary = true) {
+  const params = { type: type };
+  // 将布尔值转换为字符串传递给后端
+  if (isPrimary) {
+    params.is_primary = "true";
+  }
+
   return request({
     url: "/entities/",
     method: "get",
-    params: { type: type },
+    params: params,
   });
 }
