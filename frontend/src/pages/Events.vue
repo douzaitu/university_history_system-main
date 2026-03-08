@@ -120,7 +120,7 @@ const fetchEventsData = async () => {
       name: entity.name,
       category: entity.entity_type,
       desc: entity.description,
-      photo: "/Events/default.jpg", // 默认图片，后续可以从实体属性中获取
+      photo: entity.photo_url || "/Events/default.jpg", // 默认图片，后续可以从实体属性中获取
       readCount: 0, // 阅读量，后续可以从实体属性中获取
       lastUpdated: new Date().toISOString(),
       dataVersion: "1.0",
@@ -161,7 +161,7 @@ const handleSearch = async () => {
           name: entity.name,
           category: entity.entity_type,
           desc: entity.description,
-          photo: "/Events/default.jpg",
+          photo: entity.photo_url || "/Events/default.jpg",
           readCount: 0,
           lastUpdated: new Date().toISOString(),
         }));

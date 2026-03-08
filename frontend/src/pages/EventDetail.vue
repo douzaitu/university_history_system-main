@@ -91,7 +91,7 @@ const fetchEventDetail = async (id) => {
         name: response.name,
         category: response.entity_type,
         desc: response.description,
-        photo: "/Events/default.jpg",
+        photo: response.photo_url || "/Events/default.jpg",
         readCount: 0,
       };
     }

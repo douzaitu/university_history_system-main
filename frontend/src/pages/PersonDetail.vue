@@ -90,10 +90,6 @@
                   formattedBio.join("")
                 }}</span>
               </div>
-              <div class="info-item">
-                <span class="info-label">职务</span>
-                <span class="info-value">{{ person.category }}</span>
-              </div>
             </div>
             <div class="info-right">
               <div class="photo-section" v-if="person.photo">
@@ -246,15 +242,18 @@ const fetchPersonDetail = async (id) => {
     if (response) {
       // 提取纯姓名，去除职位信息
       const pureName = extractPureName(response.name);
+
+      // 优先使用后端返回的字段，如果为空则使用自动提取的
+      const jobTitle = extractPosition(response.description);
+      const personCategory = response.subtype || jobTitle; // 如果没有细分类型，默认显示职位或自动提取的结果
+
       person.value = {
         id: response.id,
         name: pureName,
-        category: extractPosition(response.description), // 从简介中提取职位
+        category: personCategory, // 这里对应前端显示的"人物类别"
         bio: response.description,
         // 修复这里：使用实际的photo_url，如果没有显示默认图片
-        photo: response.photo_url
-          ? `http://localhost:8000/media/${response.photo_url}`
-          : "/People/default.jpg",
+        photo: response.photo_url || "/People/default.jpg",
         readCount: 0,
         lastUpdated: new Date().toISOString(),
         dataVersion: "1.0",

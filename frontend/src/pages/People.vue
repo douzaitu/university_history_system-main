@@ -170,9 +170,7 @@ const fetchPeopleData = async () => {
       name: entity.name,
       category: extractPosition(entity.description), // 从简介中提取职位信息
       bio: entity.description,
-      photo: entity.photo_url
-        ? `http://localhost:8000/media/${entity.photo_url}` // 使用后端返回的图片URL
-        : "/People/default.jpg", // 默认图片
+      photo: entity.photo_url || "/People/default.jpg",
       readCount: 0,
       lastUpdated: new Date().toISOString(),
       dataVersion: "1.0",
@@ -211,9 +209,7 @@ const handleSearch = async () => {
         name: entity.name,
         category: extractPosition(entity.description), // 从简介中提取职位信息
         bio: entity.description,
-        photo: entity.photo_url
-          ? `http://localhost:8000/media/${entity.photo_url}`
-          : "/People/default.jpg",
+        photo: entity.photo_url || "/People/default.jpg",
         readCount: 0,
         lastUpdated: new Date().toISOString(),
       }));

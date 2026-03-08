@@ -27,9 +27,10 @@ class DocumentAdmin(admin.ModelAdmin):
 
         document = queryset.first()
 
-        # 仅处理Excel文件
-        if document.file_type != 'excel' and not document.file.name.endswith(('.xlsx', '.xls')):
-            self.message_user(request, "仅支持处理 Excel 文件。", messages.ERROR)
+        # 兼容 word, pdf, excel
+        allowed_extensions = ('.xlsx', '.xls', '.docx', '.doc', '.pdf')
+        if not document.file.name.lower().endswith(allowed_extensions):
+            self.message_user(request, "不支持的文件格式。仅支持 Excel (.xlsx, .xls), Word (.docx, .doc), PDF (.pdf)。", messages.ERROR)
             return
 
         # 更新状态

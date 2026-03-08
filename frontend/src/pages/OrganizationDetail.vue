@@ -91,7 +91,7 @@ const fetchOrganizationDetail = async (id) => {
         name: response.name,
         category: response.entity_type,
         desc: response.description,
-        photo: "/Organizations/default.jpg",
+        photo: response.photo_url || "/Organizations/default.jpg",
         readCount: 0,
       };
     }

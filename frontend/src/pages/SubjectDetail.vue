@@ -91,7 +91,7 @@ const fetchSubjectDetail = async (id) => {
         name: response.name,
         category: response.entity_type,
         desc: response.description,
-        photo: "/Subjects/default.jpg",
+        photo: response.photo_url || "/Subjects/default.jpg",
         readCount: 0,
       };
     }

@@ -92,7 +92,7 @@ const fetchPlaceDetail = async (id) => {
         name: response.name,
         category: response.entity_type,
         desc: response.description,
-        photo: "/Places/default.jpg",
+        photo: response.photo_url || "/Places/default.jpg",
         readCount: 0,
       };
     }
@@ -118,7 +118,7 @@ watch(
     if (newId) {
       fetchPlaceDetail(newId);
     }
-  }
+  },
 );
 </script>
 
@@ -342,20 +342,20 @@ watch(
     height: 70px;
     padding: 0 20px;
   }
-  
+
   .logo {
     width: 40px;
     height: 40px;
   }
-  
+
   .university-name {
     font-size: 14px;
   }
-  
+
   .system-name {
     font-size: 12px;
   }
-  
+
   .site-title {
     font-size: 16px;
   }
@@ -367,32 +367,32 @@ watch(
     height: 60px;
     flex-wrap: wrap;
   }
-  
+
   .logo-section {
     gap: 12px;
   }
-  
+
   .logo {
     width: 36px;
     height: 36px;
   }
-  
+
   .university-name {
     font-size: 13px;
   }
-  
+
   .system-name {
     font-size: 11px;
   }
-  
+
   .nav-section {
     gap: 16px;
   }
-  
+
   .site-title {
     font-size: 14px;
   }
-  
+
   .site-title .sub {
     display: none;
   }
@@ -406,12 +406,12 @@ watch(
     gap: 12px;
     align-items: flex-start;
   }
-  
+
   .nav-section {
     width: 100%;
     justify-content: space-between;
   }
-  
+
   .actions {
     width: 100%;
     justify-content: flex-end;

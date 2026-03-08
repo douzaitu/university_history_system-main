@@ -16,7 +16,11 @@ def sync_entity_task(entity_id, created=False):
         name = entity.name
         entity_type = entity.entity_type
         description = entity.description or ""
-        photo_url = entity.photo_url or ""
+        subtype = entity.subtype or ""
+        
+        # 使用新属性获取图片链接 (兼容本地上传和网络链接)
+        photo_url = entity.photo if entity.photo else ""
+        
         is_primary = entity.is_primary  # 获取新增是否核心字段
         
         # 构建 Cypher 查询
@@ -27,6 +31,7 @@ def sync_entity_task(entity_id, created=False):
         SET n.name = $name, 
             n.type = $type, 
             n.description = $description,
+            n.subtype = $subtype,
             n.photo_url = $photo_url,
             n.is_primary = $is_primary
         """
@@ -36,6 +41,7 @@ def sync_entity_task(entity_id, created=False):
             "name": name,
             "type": entity_type,
             "description": description,
+            "subtype": subtype,
             "photo_url": photo_url,
             "is_primary": is_primary
         }
@@ -55,18 +61,26 @@ def delete_entity_task(django_id, name):
     异步任务：从 Neo4j 删除实体
     """
     try:
-        # 优先通过 ID 删除
+        logger.info(f"Starting delete_entity_task for ID: {django_id}, Name: {name}")
+        
+        # 1. 尝试通过 ID (Integer) 删除
         query = "MATCH (n:Entity {django_id: $django_id}) DETACH DELETE n"
         Neo4jConnection.query(query, {"django_id": django_id})
         
-        # 备用：按名称清理 (防止旧数据没有 django_id)
+        # 2. 尝试通过 ID (String) 删除 - 防止类型不匹配
+        # 注意：如果 ID 是整数，转为字符串再试一次
+        query_str_id = "MATCH (n:Entity {django_id: $django_id_str}) DETACH DELETE n"
+        Neo4jConnection.query(query_str_id, {"django_id_str": str(django_id)})
+        
+        # 3. 备用：按名称清理 (防止旧数据没有 django_id)
         if name:
-            query_fallback = "MATCH (n:Entity {name: $name}) WHERE not exists(n.django_id) DETACH DELETE n"
+            query_fallback = "MATCH (n:Entity {name: $name}) WHERE n.django_id IS NULL DETACH DELETE n"
             Neo4jConnection.query(query_fallback, {"name": name})
             
         logger.info(f"Async deleted Entity from Neo4j: {name} (ID: {django_id})")
     except Exception as e:
         logger.error(f"Error deleting Entity from Neo4j: {e}")
+        print(f"Error deleting Entity from Neo4j: {e}") # 打印到控制台以便调试
         raise e
 
 def sync_relationship_task(relationship_id, created=False):
@@ -140,7 +154,7 @@ def delete_relationship_task(django_id, source_name, target_name, rel_type):
         if source_name and target_name:
             query_content = """
             MATCH (s:Entity {name: $source_name})-[r:RELATION]->(t:Entity {name: $target_name})
-            WHERE r.type = $type AND not exists(r.django_id)
+            WHERE r.type = $type AND r.django_id IS NULL
             DELETE r
             """
             Neo4jConnection.query(query_content, {

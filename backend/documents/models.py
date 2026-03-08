@@ -33,22 +33,24 @@ class Document(models.Model):
         ('error', '处理错误'),
     ]
     
-    title = models.CharField(max_length=200)
-    content = models.TextField(blank=True)
-    file = models.FileField(upload_to=document_upload_path)
-    file_type = models.CharField(max_length=10, choices=DOCUMENT_TYPES)
+    title = models.CharField(max_length=200, verbose_name="文档标题")
+    content = models.TextField(blank=True, verbose_name="文档内容")
+    file = models.FileField(upload_to=document_upload_path, verbose_name="文件")
+    file_type = models.CharField(max_length=10, choices=DOCUMENT_TYPES, verbose_name="文件类型")
     # 新增字段：文档内容分类
-    content_category = models.CharField(max_length=20, choices=CONTENT_CATEGORY_CHOICES, default='general')
+    content_category = models.CharField(max_length=20, choices=CONTENT_CATEGORY_CHOICES, default='general', verbose_name="内容分类")
     
-    uploader = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    upload_time = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    processed_data = models.JSONField(null=True, blank=True)
-    processing_start_time = models.DateTimeField(null=True, blank=True)
-    processing_end_time = models.DateTimeField(null=True, blank=True)
+    uploader = models.ForeignKey(CustomUser, on_delete=models.CASCADE, verbose_name="上传者")
+    upload_time = models.DateTimeField(auto_now_add=True, verbose_name="上传时间")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="处理状态")
+    processed_data = models.JSONField(null=True, blank=True, verbose_name="处理结果数据")
+    processing_start_time = models.DateTimeField(null=True, blank=True, verbose_name="处理开始时间")
+    processing_end_time = models.DateTimeField(null=True, blank=True, verbose_name="处理结束时间")
     
     def __str__(self):
         return self.title
     
     class Meta:
         ordering = ['-upload_time']
+        verbose_name = "文档"
+        verbose_name_plural = verbose_name
