@@ -108,7 +108,78 @@ class DocumentProcessor:
             pre_extracted = item.get('pre_extracted', {})
             if pre_extracted.get('name'):
                  entity_name = pre_extracted['name']
-                 description = pre_extracted.get('description', raw_text) # 如果没有特定简介列，就用全文
+                 # --- 优化描述文本 ---
+                 # 如果预提取了 description (来自简介列)，就直接用
+                 # 如果没有简介列，我们不能简单地用 raw_text (因为它包含了所有列名和值)
+                 # 我们尝试构建一个稍微干净点的描述，或者只用 raw_text 但去掉 name 部分
+                 if pre_extracted.get('description'):
+                    description = pre_extracted['description']
+                 else:
+                    # 如果没有简介列，我们不能用包含所有列名的 raw_text 直接作为描述
+                    # 策略：构建一个清洁的描述，排除掉"姓名/Name"列、"is_primary"等辅助列
+                    # 仅保留 meaningful content，并且尽量去除冗余的列名
+                    
+                    clean_parts = []
+                    # 获取当前 Excel 列名顺序
+                    # 为此我们需要 item 里带上 columns 信息，或者我们只能粗略地用正则去
+                    # 最好在 _read_excel 里生成一个 clean_text，这里我们简单处理：
+                    
+                    # 再次拆分 raw_text (它是用 "；" 连接的 "Key: Value")
+                    parts = raw_text.split("；")
+                    for p in parts:
+                        p = p.strip()
+                        if not p: continue
+                        
+                        # 检查这个 part 的 Key
+                        is_redundant = False
+                        
+                        # 1. 如果包含名字，跳过 (如 "姓名: 张三")
+                        name_keys = ['姓名', '教师姓名', '名称', 'Title', 'Name']
+                        for nk in name_keys:
+                            if p.startswith(nk + ":") or p.startswith(nk + "："):
+                                is_redundant = True
+                                break
+                        
+                        if is_redundant: continue
+
+                        # 2. 如果包含一些技术性列名，跳过
+                        skip_keys = ['Unnamed', 'Index', '序号', 'No.']
+                        for sk in skip_keys:
+                            if p.startswith(sk):
+                                is_redundant = True
+                                break
+                        
+                        if is_redundant: continue
+                        
+                        # 3. 尝试去除列名，只保留值?
+                        # 如果列名是很直观的（如"研究方向"），保留其实也好。
+                        # 我们可以检测，如果 Key 包含 "描述/简介/Content" 等，就去掉 Key
+                        if ":" in p or "：" in p:
+                            # 分割 Key Value
+                            # 注意：Value 里也可能包含冒号
+                            sep = "：" if "：" in p else ":"
+                            k, v = p.split(sep, 1)
+                            k = k.strip()
+                            v = v.strip()
+                            
+                            # 如果 Key 看起来像是描述性的，就只保留 Value
+                            if any(d in k for d in ['简介', '描述', '介绍', 'Content', 'About', 'Bio', 'Details', '详细', '内容']):
+                                clean_parts.append(v)
+                            else:
+                                # 其他属性，保留 Key: Value 格式，或者加个括号
+                                # 比如 "职称: 教授" -> "教授" ? 有点冒险，"教授"可能指别的
+                                # 保持 "职称: 教授" 比较稳妥，或者用 "Key为Value" 这种中文习惯?
+                                # 既然用户觉得 "列名: 值" 不好看，那我们试着针对特定列去掉 Key
+                                # 比如：职称、院系、学位
+                                if k in ['职称', '职务', '院系', '学院', '学位', '学历']:
+                                     clean_parts.append(v)
+                                else:
+                                     clean_parts.append(p)
+                        else:
+                            clean_parts.append(p)
+                    
+                    description = "，".join(clean_parts)
+
                  # print(f"Optimized: Using pre-extracted name: {entity_name}")
             else:
                 # 只有无法识别列名时才调用 LLM 进行非结构化提取
@@ -141,8 +212,6 @@ class DocumentProcessor:
             entity_type = category_type_map.get(document.content_category, 'person')
 
             # 强制覆盖：如果用户指定了是“事件”文档，那么提取出来的实体必须是“事件”类型，
-            # 哪怕 AI 提取的名字像人名（这种情况下通常是 AI 提取错了，或者提取了事件中的主角）
-            # 但既然用户说是事件文档，存入数据库时至少类型要对。
             
             # 只有当 entity_name 不为空才处理
             if not entity_name:
@@ -561,7 +630,7 @@ class DocumentProcessor:
             # 常见的姓名列名候选中
             potential_name_cols = ['姓名', '教师姓名', '名称', '实体名称', 'Title', 'Name', 'Attribute', 'Entity']
             # 常见的描述列名候选中
-            potential_desc_cols = ['简介', '描述', 'Description', 'Bio', 'Introduction', 'Profile', '基本情况', '个人简介']
+            potential_desc_cols = ['简介', '描述', 'Description', 'Bio', 'Introduction', 'Profile', '基本情况', '个人简介', '详细介绍', 'Content', 'About', '经历', 'Experience', '详细内容', 'Details']
             
             # --- 新增：Subtype (细分类型/职称) 列识别 ---
             # 优先使用 '职称' 或 '职务' 作为 Subtype，这能保证和前端显示的“头衔”一致
@@ -678,6 +747,32 @@ class DocumentProcessor:
         except Exception as e:
             print(f"Read Excel error: {e}")
             raise e
+
+    @classmethod
+    def _read_excel_row_text(cls, row, columns):
+        """辅助函数：更干净地生成 Excel 行的文本描述"""
+        # 构建一个不带列名的纯文本描述，或者更加自然的描述
+        # 如果列名像 "姓名", "职称" 这种，其实带上也无妨，但不应该像 "姓名: 张三; 职称: 教授" 这种机械拼接
+        # 更好的方式：
+        # 张三，教授，xxx学院，研究方向：xxx。
+        
+        parts = []
+        skip_cols = ['姓名', '教师姓名', 'Name', 'Unnamed'] # 跳过名字列
+        
+        for col in columns:
+            if any(s in col for s in skip_cols):
+                continue
+                
+            val = str(row[col]).strip()
+            if val and val.lower() != 'nan':
+                # 如果是简介列，直接加值，不加列名
+                if '简介' in col or '描述' in col:
+                     parts.append(val)
+                # 其他列，加上列名作为前缀（如 “研究方向：AI”）
+                else:
+                     parts.append(f"{col}: {val}")
+        
+        return "；".join(parts)
 
     @classmethod
     def _generate_triples(cls, entity_dict, teacher_name):
