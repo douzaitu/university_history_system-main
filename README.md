@@ -118,7 +118,9 @@ python manage.py qcluster
 后端访问：http://127.0.0.1:8000/admin/
 后端管理员身份信息：
 用户名：admin
-密码admin123
+密码admin123           
 Neo4j访问：http://localhost:7474/
 
 更新 .env.example 文件中的配置,修改完成了文件名改为.env
+
+除了 .env.example 文件中的neo4j密码要改，backend\knowledge_graph\neo4j_db.py里的neo4j密码也要改！不然就会出现数据写入不成功的情况

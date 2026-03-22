@@ -14,16 +14,40 @@
           机构库 <span class="sub">dm.cdut.edu.cn</span>
         </div>
       </div>
+      <!-- 视图切换 Tabs -->
+      <div class="view-tabs">
+        <button 
+          :class="['tab-btn', { active: currentTab === 'info' }]"
+          @click="currentTab = 'info'"
+        >
+          <span class="icon">▤</span> 知识信息
+        </button>
+        <button 
+          :class="['tab-btn', { active: currentTab === 'graph' }]"
+          @click="currentTab = 'graph'"
+        >
+          <span class="icon">☊</span> 关系图谱
+        </button>
+        <button 
+          :class="['tab-btn', { active: currentTab === 'timeline' }]"
+          @click="currentTab = 'timeline'"
+        >
+          <span class="icon">⸹</span> 时间轴
+        </button>
+      </div>
       <div class="actions"></div>
     </div>
-    <HeroBanner
-      image="/HomePage/机构.jpg"
-      title="数字记忆 · 机构库"
-      :height="320"
-      description="机构库收录与计算机与网络安全学院相关的组织和机构资料，包括院系、研究中心、实验室等信息。"
-    />
 
-    <div class="searchbar">
+    <!-- 知识信息视图 (原有内容) -->
+    <div v-if="currentTab === 'info'" class="tab-content info-view">
+      <HeroBanner
+        image="/HomePage/机构.jpg"
+        title="数字记忆 · 机构库"
+        :height="320"
+        description="机构库收录与计算机与网络安全学院相关的组织和机构资料，包括院系、研究中心、实验室等信息。"
+      />
+
+      <div class="searchbar">
       <input
         v-model="query"
         class="search-input"
@@ -86,6 +110,55 @@
         />
       </div>
     </div>
+    </div>
+
+    <!-- 时间轴视图 (历史沿革图) -->
+    <div v-if="currentTab === 'timeline'" class="tab-content timeline-view">
+      <div 
+         className="timeline-scroll-wrapper" 
+         ref="timelineWrapper"
+         @mousedown="startDrag"
+         @mouseleave="stopDrag"
+         @mouseup="stopDrag"
+         @mousemove="doDrag"
+      >
+        <div class="evolution-chart">
+           <div 
+             v-for="(stage, index) in historyStages" 
+             :key="index" 
+             class="evolution-column"
+           >
+              <!-- 阶段头部 (学院/系名称) -->
+              <div class="stage-header" :class="getHeaderClass(stage.title)">
+                  <div class="stage-title">{{ stage.title }}</div>
+                  <div class="stage-period">{{ stage.period }}</div>
+              </div>
+
+              <!-- 连线 (除了最后一列) -->
+              <div v-if="index < historyStages.length - 1" class="connection-line"></div>
+
+              <!-- 具体专业/机构列表 -->
+              <div class="stage-items">
+                  <div 
+                    v-for="(item, idx) in stage.items" 
+                    :key="idx" 
+                    class="org-item"
+                    :class="{ 'org-item-highlight': item.highlight }"
+                  >
+                      <div class="item-period">{{ item.period }}</div>
+                      <div class="item-name">{{ item.name }}</div>
+                  </div>
+              </div>
+           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 关系图谱视图 -->
+    <div v-if="currentTab === 'graph'" class="tab-content graph-view">
+        <div ref="graphChart" class="echarts-container"></div>
+    </div>
+
   </div>
 </template>
 
@@ -94,12 +167,274 @@ import LibraryCard from "../components/LibraryCard.vue";
 import HeroBanner from "../components/HeroBanner.vue";
 // 添加API导入
 import { getEntitiesByType, searchEntities } from "../api/knowledgeGraph";
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch, nextTick, onUnmounted } from "vue";
+import * as echarts from 'echarts';
 
+const currentTab = ref("info");
 const query = ref("");
 const sortBy = ref("name");
 const categoryFilter = ref("");
 const loading = ref(false);
+
+// 图谱相关
+const graphChart = ref(null);
+const chartInstance = ref(null);
+
+const initGraph = () => {
+  if (!graphChart.value) return;
+  
+  chartInstance.value = echarts.init(graphChart.value);
+  
+  const option = {
+    backgroundColor: '#f8fafc',
+    tooltip: {},
+    animationDurationUpdate: 1500,
+    animationEasingUpdate: 'quinticInOut',
+    series: [
+      {
+        type: 'graph',
+        layout: 'force',
+        symbolSize: 50,
+        roam: 'scale', // 只允许缩放，禁止拖动背景（平移）
+        label: {
+          show: true,
+          position: 'inside',
+          fontSize: 12
+        },
+        edgeSymbol: ['circle', 'arrow'],
+        edgeSymbolSize: [4, 10],
+        draggable: true, // 允许节点拖拽回弹
+        data: [
+            // 中心节点
+            {
+                name: '计算机与\n网络安全学院',
+                symbolSize: 100,
+                // 去掉 x, y, fixed 属性，让布局自动居中
+                itemStyle: {
+                    color: '#ffffff', // 改为白色
+                    borderColor: '#fecaca', // 改为淡粉色
+                    borderWidth: 3,
+                    shadowBlur: 10,
+                    shadowColor: 'rgba(0, 0, 0, 0.1)'
+                },
+                label: {
+                    show: true,
+                    fontSize: 15,
+                    fontWeight: 'bold',
+                    color: '#334155', // 深灰色文字
+                    lineHeight: 20
+                }
+            },
+            // 子节点：2025年学院标准
+            ...['计算机科学与技术', '网络空间安全', '软件工程', '数字媒体技术', '人工智能', '物联网工程'].map(name => ({
+                name,
+                symbolSize: 75,
+                itemStyle: {
+                    color: '#fff5f5', // 改为淡粉色
+                    borderColor: '#fecaca', // 粉色边框
+                    borderWidth: 1,
+                    shadowBlur: 5,
+                    shadowColor: 'rgba(0, 0, 0, 0.05)'
+                },
+                label: {
+                    show: true,
+                    color: '#475569',
+                    fontSize: 13,
+                    formatter: (params) => {
+                        // 换行处理
+                        return params.name.length > 5 ? params.name.slice(0, 4) + '\n' + params.name.slice(4) : params.name;
+                    }
+                }
+            }))
+        ],
+        links: [
+             ...['计算机科学与技术', '网络空间安全', '软件工程', '数字媒体技术', '人工智能', '物联网工程'].map(name => ({
+                source: '计算机与\n网络安全学院',
+                target: name,
+                lineStyle: {
+                    color: '#cbd5e1',
+                    width: 2,
+                    curveness: 0.3 // 增加曲率
+                }
+            }))
+        ],
+        force: {
+            repulsion: 800,
+            edgeLength: 180,
+            gravity: 0.1
+        }
+      }
+    ]
+  };
+  chartInstance.value.setOption(option);
+};
+
+// 监听Tab切换
+watch(currentTab, (newTab) => {
+    if (newTab === 'graph') {
+        nextTick(() => {
+            initGraph();
+        });
+    } else {
+        if (chartInstance.value) {
+            chartInstance.value.dispose();
+            chartInstance.value = null;
+        }
+    }
+});
+
+// 窗口大小调整
+const handleResize = () => {
+    chartInstance.value && chartInstance.value.resize();
+};
+
+onUnmounted(() => {
+    window.removeEventListener('resize', handleResize);
+    if (chartInstance.value) {
+        chartInstance.value.dispose();
+    }
+});
+
+onMounted(() => {
+    window.addEventListener('resize', handleResize);
+});
+
+// 拖拽相关逻辑
+const timelineWrapper = ref(null);
+const isMouseDown = ref(false);
+const startX = ref(0);
+const startY = ref(0);
+const scrollLeft = ref(0);
+const scrollTop = ref(0);
+
+const startDrag = (e) => {
+    isMouseDown.value = true;
+    startX.value = e.pageX;
+    startY.value = e.pageY;
+    scrollLeft.value = timelineWrapper.value.scrollLeft;
+    scrollTop.value = timelineWrapper.value.scrollTop;
+    timelineWrapper.value.style.cursor = 'grabbing';
+};
+
+const stopDrag = () => {
+    isMouseDown.value = false;
+    if (timelineWrapper.value) {
+        timelineWrapper.value.style.cursor = 'grab';
+    }
+};
+
+const doDrag = (e) => {
+    if (!isMouseDown.value) return;
+    e.preventDefault();
+    const x = e.pageX;
+    const y = e.pageY;
+    const walkX = (x - startX.value) * 1.5; // 拖动速度系数
+    const walkY = (y - startY.value) * 1.5;
+    timelineWrapper.value.scrollLeft = scrollLeft.value - walkX;
+    timelineWrapper.value.scrollTop = scrollTop.value - walkY;
+};
+
+// ============================================
+// 数据修改处：机构历史沿革数据
+// 请在此处修改 historyStages 的内容
+// ============================================
+const historyStages = [
+  {
+    title: "计算机工程系",
+    period: "1993-1998",
+    items: [
+      { name: "计算机及应用", period: "1994-1998" }
+    ]
+  },
+  {
+    title: "", 
+    period: "1999-2001",
+    items: [
+      { name: "计算机科学与技术", period: "1999-2001" },
+      { name: "电子信息科学与技术", period: "2001" }
+    ]
+  },
+  {
+    title: "",
+    period: "2001-2010",
+    items: [
+      { name: "计算机科学与技术", period: "2001-2010" },
+      { name: "电子信息科学与技术", period: "2001-2010" }
+    ]
+  },
+  {
+    title: "信息科学与技术学院",
+    period: "2011-2018",
+    items: [
+      { name: "计算机科学与技术", period: "2011-2016" },
+      { name: "软件工程", period: "2005-2016" },
+      { name: "数字媒体技术", period: "2011-2018" },
+      { name: "物联网工程", period: "2011-2018" },
+      { name: "电子信息科学与技术", period: "2011-2018" }
+    ]
+  },
+  {
+    title: "网络空间安全学院",
+    period: "2017-2018",
+    items: [
+       { name: "计算机科学与技术", period: "2017-2018" },
+       { name: "网络空间安全", period: "2018" },
+       { name: "软件工程", period: "2017-2018" },
+    ]
+  },
+  {
+    title: "信息科学与技术学院(网络安全学院、牛津布鲁克斯学院)",
+    period: "2019-2020",
+    items: [
+        { name: "计算机科学与技术", period: "2019-2020" },
+        { name: "计算机科学与技术(中外合作办学)", period: "2019-2020" },
+        { name: "网络空间安全", period: "2019-2020" },
+        { name: "软件工程", period: "2019-2020" },
+        { name: "软件工程(中外合作办学)", period: "2019-2020" },
+        { name: "数字媒体技术", period: "2019-2020" },
+        { name: "人工智能", period: "2020" },
+        { name: "物联网工程", period: "2019-2020" },
+        { name: "电子信息科学与技术", period: "2019" }
+    ]
+  },
+  {
+    title: "计算机与网络安全学院(牛津布鲁克斯学院)",
+    period: "2021-2023",
+    items: [
+        { name: "计算机科学与技术", period: "2021-2023" },
+        { name: "计算机科学与技术(中外合作办学)", period: "2021-2023" },
+        { name: "网络空间安全", period: "2021-2023" },
+        { name: "软件工程", period: "2021-2023" },
+        { name: "软件工程(中外合作办学)", period: "2021-2023" },
+        { name: "数字媒体技术", period: "2021-2023" },
+        { name: "人工智能", period: "2021-2023" },
+        { name: "物联网工程", period: "2021-2003" },
+        { name: "智能科学与技术", period: "2021-2024", highlight: true }
+    ]
+  },
+  {
+    title: "计算机与网络安全学院(示范性软件学院)",
+    period: "2024-2025",
+    items: [
+        { name: "计算机科学与技术", period: "2024-2025" },
+        { name: "网络空间安全", period: "2024-2025" },
+        { name: "软件工程", period: "2024-2025" },
+        { name: "数字媒体技术", period: "2024-2025" },
+        { name: "人工智能", period: "2024-2025" },
+        { name: "物联网工程", period: "2024-2025" }
+    ]
+  }
+];
+
+const getHeaderClass = (title) => {
+    if (title.includes("工程系")) return "header-engineering";
+    if (title.includes("信息科学")) return "header-info-science";
+    if (title.includes("网络空间")) return "header-cyber";
+    return "header-default";
+};
+
+
+
 // 改为从API获取数据
 const organizationsData = ref([]);
 
@@ -702,4 +1037,250 @@ const filteredAndSortedOrganizations = computed(() => {
     padding: 8px 12px;
   }
 }
+
+/* Tab Navigation */
+.view-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  padding: 0 24px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  font-weight: 500;
+  color: #64748b;
+  padding: 16px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab-btn:hover {
+  color: #4a9eff;
+}
+
+.tab-btn.active {
+  color: #4a9eff;
+  border-bottom-color: #4a9eff;
+  font-weight: 600;
+}
+
+/* Timeline/Evolution Chart View */
+.timeline-view {
+  background: white;
+  height: calc(100vh - 120px);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.timeline-scroll-wrapper {
+  flex: 1;
+  overflow: auto; /* 允许双向滚动 */
+  position: relative;
+  padding: 40px;
+  background-color: #f8fafc;
+  cursor: grab; /* 显示抓手光标 */
+  user-select: none; /* 防止拖动时选中文字 */
+}
+
+.timeline-scroll-wrapper:active {
+  cursor: grabbing;
+}
+
+.timeline-scroll-wrapper::-webkit-scrollbar {
+  height: 12px;
+  width: 12px; /* 垂直滚动条宽度 */
+}
+.timeline-scroll-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.timeline-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+}
+
+.evolution-chart {
+  display: flex; /* Flex布局实现多个列并排 */
+  gap: 50px; /* 增加列间距 */
+  min-height: 100%; /* 确保高度撑满 */
+  min-width: max-content; /* 确保内容不换行 */
+  padding-bottom: 20px;
+}
+
+.evolution-column {
+  display: flex;
+  flex-direction: column;
+  width: 200px; 
+  min-width: 200px;
+  position: relative;
+  align-items: center;
+}
+
+/* 阶段连线 */
+.connection-line {
+  position: absolute;
+  top: 130px; /* 连接线高度，位于Header下方 */
+  right: -50px; /* 调整连接线延伸距离，匹配 gap */
+  width: 50px; /* 调整连接线长度，匹配 gap */
+  height: 2px;
+  background-color: #cbd5e1;
+  z-index: 1;
+}
+
+/* 阶段头部样式 */
+.stage-header {
+  width: 90%;
+  min-height: 80px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: white;
+  padding: 12px;
+  text-align: center;
+  margin-bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+/* 顶部竖线 - 连接Header和下面的Items */
+.stage-header::after {
+  content: '';
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  width: 2px;
+  height: 40px;
+  background-color: #e2e8f0;
+}
+
+.header-engineering {
+   border-top: 3px solid #64748b;
+}
+
+.header-info-science {
+   border-top: 3px solid #4a9eff;
+}
+
+.header-cyber {
+    border-top: 3px solid #ec4899;
+}
+
+.header-default {
+    border-top: 3px solid #94a3b8;
+}
+
+.stage-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #334155;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.stage-period {
+  font-size: 12px;
+  color: #64748b;
+  font-family: Consolas, monospace;
+}
+
+.stage-items {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  align-items: center;
+  padding: 0 10px;
+  position: relative;
+}
+
+/* 贯穿所有Items的竖线 */
+.stage-items::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    background-color: #e2e8f0;
+    z-index: 0;
+}
+
+.org-item {
+  width: 100%;
+  background: #fff5f5; /* 默认浅粉色背景 */
+  border: 1px solid #fecaca;
+  padding: 10px;
+  border-radius: 2px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: all 0.2s;
+}
+
+.org-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+/* 连接线节点的横向连接线 - 这是一个视觉trick */
+.evolution-column:not(:last-child) .org-item::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -50px; /* 调整延伸距离 匹配 gap */
+    width: 50px;
+    height: 1px;
+    border-top: 1px dashed #cbd5e1;
+    z-index: -1;
+}
+
+.org-item-highlight {
+    background-color: #fef3c7; /* 黄色高亮 */
+    border-color: #fcd34d;
+}
+
+.item-period {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-bottom: 2px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding-bottom: 2px;
+    display: inline-block;
+}
+
+.item-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #475569;
+}
+
+/* Graph View */
+.graph-view {
+  height: calc(100vh - 120px);
+  position: relative;
+  background: #f8fafc;
+  overflow: hidden;
+}
+
+.echarts-container {
+    width: 100%;
+    height: 100%;
+}
+
 </style>

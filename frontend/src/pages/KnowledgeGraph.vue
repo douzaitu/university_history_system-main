@@ -241,188 +241,160 @@ const renderGraph = async () => {
   }
 
   // 准备图表数据
-  const nodes = graphData.value.nodes.map((node) => {
-    const nodeSize = node.size || (node.type === "teacher" ? 30 : 20);
-    // 丰富颜色方案
-    const nodeColors = {
-      teacher: "#5470c6",
-      entity: "#91cc75",
-      school: "#fac858",
-      subject: "#ee6666",
-      award: "#73c0de",
-      paper: "#3ba272",
-      default: "#91cc75",
-    };
-    // 使用不同形状
-    const symbolType = node.type === "teacher" ? "circle" : "circle";
-
-    return {
-      id: String(node.id),
-      name: node.label,
-      symbolSize: nodeSize,
-      symbol: symbolType,
-      itemStyle: {
-        color: nodeColors[node.type] || nodeColors.default,
-        borderColor: "#333",
-        borderWidth: 2,
-        shadowBlur: 10,
-        shadowColor: "rgba(0, 0, 0, 0.3)",
-        shadowOffsetX: 2,
-        shadowOffsetY: 2,
-      },
-      label: {
-        show: true,
-        position: "right",
-        formatter: function (params) {
-          return params.data.name.length > 5
-            ? params.data.name.slice(0, 5) + "..."
-            : params.data.name;
-        },
-        backgroundColor: "rgba(255, 255, 255, 0.85)",
-        padding: [3, 8, 3, 8],
-        borderColor: "#ddd",
-        borderWidth: 1,
-        borderRadius: 4,
-        fontSize: 12,
-        fontWeight: "normal",
-        color: "#333",
-        distance: 10,
-        // 避免标签重叠
-        overflow: "truncate",
-        width: 120,
-      },
-      // 鼠标悬停效果
-      emphasis: {
-        itemStyle: {
-          borderColor: "#ff7875",
-          borderWidth: 3,
-          shadowBlur: 15,
-          shadowColor: "rgba(255, 120, 117, 0.5)",
-          shadowOffsetX: 3,
-          shadowOffsetY: 3,
-        },
-        label: {
-          fontSize: 14,
-          fontWeight: "bold",
-          color: "#ff7875",
-        },
-        scale: true,
-        scaleSize: 5,
-      },
-      category: node.type,
-    };
-  });
-
-  const edges = graphData.value.edges.map((edge) => {
-    // 根据关系类型设置不同颜色
-    const relationColors = {
-      毕业于: "#5470c6",
-      任职于: "#91cc75",
-      研究方向: "#fac858",
-      获得奖项: "#ee6666",
-      发表论文: "#73c0de",
-      指导学生: "#3ba272",
-      合作: "#fc8452",
-      默认: "#888",
-    };
-    // 根据关系类型设置线宽
-    const lineWidth = edge.label && relationColors[edge.label] ? 2.5 : 2;
-
-    return {
-      source: String(edge.source),
-      target: String(edge.target),
-      label: {
-        show: true,
-        formatter: edge.label || "关系",
-        backgroundColor: "#fff",
-        padding: [2, 6, 2, 6],
-        borderColor: "#ccc",
-        borderWidth: 1,
-        borderRadius: 3,
-        fontSize: 10,
-        color: "#666",
-        fontWeight: "normal",
-      },
-      lineStyle: {
-        width: lineWidth,
-        color: relationColors[edge.label] || relationColors.default,
-        curveness: 0.15,
-        type: "solid",
-      },
-      // 鼠标悬停效果
-      emphasis: {
-        lineStyle: {
-          width: 4,
-          color: "#ff7875",
-          type: "solid",
-        },
-        label: {
-          fontSize: 12,
-          fontWeight: "bold",
-          color: "#ff7875",
-        },
-      },
-      symbol: ["none", "arrow"],
-      symbolSize: [8, 14],
-      // 设置边的z值，确保边显示在节点下方
-      z: -1,
-    };
-  });
-
-  console.log("准备渲染的节点:", nodes);
-  console.log("准备渲染的边:", edges);
-
-  // 配置图表选项
   const option = {
     tooltip: {
-      trigger: "item",
-      formatter: function (params) {
-        if (params.dataType === "node") {
-          return `${params.name}<br/>类型: ${params.data.category || "实体"}`;
+      formatter: (params) => {
+        if (params.dataType === "edge") {
+          return `${params.data.sourceName} → ${params.data.targetName}<br/>关系: ${params.data.label}`;
         } else {
-          return `关系: ${params.data.label}<br/>${params.data.source} → ${params.data.target}`;
+          return `${params.data.name}<br/>类型: ${params.data.type}`;
         }
       },
-      backgroundColor: "rgba(0, 0, 0, 0.7)",
-      borderColor: "#fff",
-      borderWidth: 1,
-      textStyle: {
-        color: "#fff",
-      },
-      padding: [8, 12],
-      borderRadius: 6,
     },
+    animationDuration: 1500,
+    animationEasingUpdate: "quinticInOut",
     series: [
       {
         type: "graph",
         layout: "force",
-        data: nodes,
-        links: edges,
-        roam: "scale",
-        // 优化拖拽交互
+        data: graphData.value.nodes.map((node) => {
+          // 根据节点类型设置不同样式
+          const nodeSize = node.size || (node.type === "teacher" ? 40 : 30);
+          const nodeColors = {
+            teacher: "#5470c6",
+            person: "#5470c6",
+            entity: "#91cc75",
+            school: "#fac858",
+            organization: "#fac858",
+            research: "#ee6666",
+            paper: "#73c0de",
+            award: "#3ba272",
+            default: "#9a60b4",
+          };
+          // 强制所有节点使用圆形
+          const symbolType = "circle";
+          const symbolSize = nodeSize;
+          
+          return {
+            id: String(node.id),
+            name: node.label,
+            symbolSize: symbolSize,
+            symbol: symbolType,
+            type: node.type,
+            x: node.x,
+            y: node.y,
+            value: node.value,
+            itemStyle: {
+              color: nodeColors[node.type] || nodeColors.default,
+              borderColor: "#fff",
+              borderWidth: 2,
+              shadowBlur: 15,
+              shadowColor: "rgba(0, 0, 0, 0.4)",
+              shadowOffsetX: 0,
+              shadowOffsetY: 2,
+              borderRadius: 50,
+            },
+            label: {
+              show: true,
+              position: "right",
+              distance: 12,
+              formatter: (params) => {
+                // 自动截断过长的标签
+                const label = params.data.name;
+                if (label.length > 10) {
+                  return label.substring(0, 10) + "...";
+                }
+                return label;
+              },
+              fontSize: 14,
+              fontWeight: "500",
+              color: "#333",
+              backgroundColor: "rgba(255, 255, 255, 0.9)",
+              borderColor: "#ddd",
+              borderWidth: 1,
+              borderRadius: 6,
+              padding: [4, 8, 4, 8],
+              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            },
+            emphasis: {
+              itemStyle: {
+                borderColor: "#ff7875",
+                borderWidth: 3,
+              },
+              label: {
+                fontSize: 14,
+                color: "#ff7875",
+              },
+              scale: true,
+            },
+          };
+        }),
+        links: graphData.value.edges.map((edge) => {
+          // 根据关系类型设置不同颜色
+          const edgeColors = {
+            "毕业于": "#1890ff",
+            "任职于": "#52c41a",
+            "研究方向": "#fa8c16",
+            "发表论文": "#f5222d",
+            "获得奖项": "#722ed1",
+            "指导学生": "#13c2c2",
+            "合作项目": "#eb2f96",
+            default: "#8c8c8c",
+          };
+          
+          return {
+            source: String(edge.source),
+            target: String(edge.target),
+            sourceName: graphData.value.nodes.find((n) => n.id === edge.source)?.label || "",
+            targetName: graphData.value.nodes.find((n) => n.id === edge.target)?.label || "",
+            label: edge.label,
+            lineStyle: {
+              color: edgeColors[edge.label] || edgeColors.default,
+              width: 2,
+              curveness: 0.3,
+            },
+            symbol: ["circle", "arrow"],
+            symbolSize: [4, 10],
+            emphasis: {
+              lineStyle: {
+                width: 4,
+                color: "#ff7875",
+              },
+            },
+          };
+        }),
         draggable: true,
+        roam: "scale", // 改为只允许缩放，禁止拖动背景和线条平移
         // 优化节点选择行为
         focusNodeAdjacency: true,
         // 优化节点高亮行为
         emphasis: {
           focus: "adjacency",
         },
-        label: {
-          show: true,
-        },
-        force: {
-          // 优化力导向布局参数
-          repulsion: 500,
-          gravity: 0.1,
-          edgeLength: 135,
-          friction: 0.6,
-          // 迭代次数
-          iterations: 100,
-        },
-        // 配置缩放限制
         scaleLimit: {
           min: 0.2,
           max: 3,
+        },
+        force: {
+          repulsion: 1000,
+          edgeLength: [100, 160],
+          gravity: 0.05,
+          friction: 0.6,
+        },
+        label: {
+          show: true,
+          position: "right",
+          distance: 10,
+        },
+        edgeLabel: {
+          show: true,
+          fontSize: 10,
+          formatter: (params) => params.data.label,
+          backgroundColor: "rgba(255, 255, 255, 0.8)",
+          borderColor: "#333",
+          borderWidth: 1,
+          borderRadius: 4,
+          padding: [2, 4, 2, 4],
         },
       },
     ],
