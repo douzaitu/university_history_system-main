@@ -9,7 +9,7 @@
         </div>
       </div>
       <div class="nav-section">
-        <router-link to="/subjects" class="back">← 返回学科库</router-link>
+        <a href="javascript:void(0)" @click.prevent="goBack" class="back">← 返回</a>
         <div class="site-title">
           学科详情 <span class="sub">dm.cdut.edu.cn</span>
         </div>
@@ -67,14 +67,31 @@
   </div>
 </template>
 
+
 <script setup>
 import { ref, onMounted, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { getEntityDetail } from "../api/entityDetail";
 
 const route = useRoute();
+const router = useRouter(); 
 const subject = ref(null);
 const loading = ref(false);
+
+const goBack = () => {
+    // 尝试关闭窗口（针对新标签页打开的情况）
+    window.close();
+    
+    // 如果窗口没有关闭，说明不是脚本打开的，执行路由回退
+    if (!window.closed) {
+        if (window.history.length > 1) {
+            router.back();
+        } else {
+            // 如果没有历史记录，回退到列表页
+            router.push('/subjects');
+        }
+    }
+};
 
 // 获取学科详情数据
 const fetchSubjectDetail = async (id) => {

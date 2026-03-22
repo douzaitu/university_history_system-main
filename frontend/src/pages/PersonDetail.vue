@@ -9,7 +9,7 @@
         </div>
       </div>
       <div class="nav-section">
-        <router-link to="/people" class="back">← 返回人物库</router-link>
+        <a href="javascript:void(0)" @click.prevent="goBack" class="back">← 返回</a>
         <div class="site-title">
           人物详情 <span class="sub">dm.cdut.edu.cn</span>
         </div>
@@ -143,6 +143,21 @@ import KnowledgeGraphComponent from "../components/KnowledgeGraphComponent.vue";
 
 const route = useRoute();
 const router = useRouter();
+
+const goBack = () => {
+    // 尝试关闭窗口（针对新标签页打开的情况）
+    window.close();
+    
+    // 如果窗口没有关闭，说明不是脚本打开的，执行路由回退
+    if (!window.closed) {
+        if (window.history.length > 1) {
+            router.back();
+        } else {
+            // 如果没有历史记录，回退到列表页
+            router.push('/people');
+        }
+    }
+};
 
 // 状态管理
 const person = ref(null);

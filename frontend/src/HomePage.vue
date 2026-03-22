@@ -23,35 +23,35 @@
         <Card
           title="人物"
           desc="以知识图谱形式收录计算机与网络安全学院相关人物"
-          count="41"
+          :count="counts.people"
           to="/people"
           image="/HomePage/peopel.jpg"
         />
         <Card
           title="地点"
           desc="收录与计算机与网络安全学院相关的地理位置、建筑等"
-          count="1"
+          :count="counts.places"
           to="/places"
           image="/HomePage/place.jpg"
         />
         <Card
           title="学科"
           desc="学科库为用户提供了解计算机与网络安全学院学科的信息"
-          count="1"
+          :count="counts.subjects"
           to="/subjects"
           image="/HomePage/subject.gif"
         />
         <Card
           title="机构"
           desc="收录与计算机与网络安全学院相关的组织和机构资料"
-          count="1"
+          :count="counts.organizations"
           to="/organizations"
           image="/HomePage/机构.jpg"
         />
         <Card
           title="事件"
           desc="记录与计算机与网络安全学院相关的重要事件"
-          count="1"
+          :count="counts.events"
           to="/events"
           image="/HomePage/事件.jpg"
         />
@@ -61,7 +61,40 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from "vue";
 import Card from "./components/Card.vue";
+import { getEntitiesByType } from "./api/knowledgeGraph";
+
+const counts = ref({
+  people: 0,
+  places: 0,
+  subjects: 0,
+  organizations: 0,
+  events: 0,
+});
+
+onMounted(async () => {
+  try {
+    // 并行获取各类型实体数量（只统计核心实体）
+    const results = await Promise.all([
+      getEntitiesByType("person", true),
+      getEntitiesByType("location", true),
+      getEntitiesByType("subject", true),
+      getEntitiesByType("organization", true),
+      getEntitiesByType("event", true),
+    ]);
+
+    counts.value = {
+      people: results[0].length,
+      places: results[1].length,
+      subjects: results[2].length,
+      organizations: results[3].length,
+      events: results[4].length,
+    };
+  } catch (error) {
+    console.error("Failed to fetch entity counts:", error);
+  }
+});
 </script>
 
 <style scoped>
@@ -171,41 +204,45 @@ import Card from "./components/Card.vue";
 .icon {
   background: none;
   border: none;
-  font-size: 18px;
   cursor: pointer;
-  color: #64748b;
-  transition: color 0.2s;
   padding: 8px;
-  border-radius: 4px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
 }
 
 .icon:hover {
-  color: #3b82f6;
-  background: #f3f4f6;
+  background-color: #f3f4f6;
+}
+
+.icon img {
+  width: 20px;
+  height: 20px;
 }
 
 .main-content {
-  padding: 28px 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .page-title {
-  text-align: center;
-  color: #2d3748;
-  font-size: 24px;
-  margin: 6px 0 18px;
-  font-weight: 600;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 50px;
+  color: #1e293b;
+  position: relative;
+  display: inline-block;
 }
 
 .card-row {
   display: flex;
+  flex-wrap: wrap; /* 允许换行以适应小屏幕 */
+  gap: 32px;
   justify-content: center;
-  gap: 20px;
-  padding: 20px;
-  flex-wrap: nowrap;
-  overflow: auto;
-  align-items: flex-start;
 }
-
 /* 响应式设计 */
 @media (max-width: 1024px) {
   .topbar {

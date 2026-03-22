@@ -9,7 +9,7 @@
         </div>
       </div>
       <div class="nav-section">
-        <router-link to="/" class="back">← 返回首页</router-link>
+        <a href="javascript:void(0)" @click.prevent="goBack" class="back">← 返回首页</a>
         <div class="site-title">
           事件库 <span class="sub">dm.cdut.edu.cn</span>
         </div>
@@ -93,6 +93,24 @@ import HeroBanner from "../components/HeroBanner.vue";
 // 添加API导入
 import { getEntitiesByType, searchEntities } from "../api/knowledgeGraph";
 import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+
+const goBack = () => {
+    // 尝试关闭窗口（针对新标签页打开的情况）
+    window.close();
+    
+    // 如果窗口没有关闭，说明不是脚本打开的，执行路由回退
+    if (!window.closed) {
+        if (window.history.length > 1) {
+            router.back();
+        } else {
+            // 如果没有历史记录，回退到首页
+            router.push('/');
+        }
+    }
+};
 
 const query = ref("");
 const sortBy = ref("name");
