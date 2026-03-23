@@ -242,7 +242,36 @@ onMounted(async () => {
   flex-wrap: wrap; /* 允许换行以适应小屏幕 */
   gap: 32px;
   justify-content: center;
+  /* 确保在足够宽的屏幕上能够横向铺开 */
+  max-width: 100%; 
 }
+
+/* 针对不同屏幕尺寸的适配优化 */
+
+/* 大型笔记本屏幕 (1440px - 1600px) */
+@media (max-width: 1600px) {
+  .card-row {
+    gap: 24px;
+  }
+}
+
+/* 标准笔记本屏幕 (1366px - 1440px) */
+@media (max-width: 1440px) {
+  .card-row {
+    gap: 16px;
+  }
+  .main-content {
+    padding: 30px 16px;
+  }
+}
+
+/* 小型笔记本屏幕 (1280px - 1366px) */
+@media (max-width: 1366px) {
+  .card-row {
+    gap: 12px;
+  }
+}
+
 /* 响应式设计 */
 @media (max-width: 1024px) {
   .topbar {

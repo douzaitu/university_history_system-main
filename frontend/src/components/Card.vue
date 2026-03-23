@@ -45,7 +45,8 @@ function handleClick() {
 <style scoped>
 .card {
   width: 260px;
-  min-width: 260px;
+  /* 移除强制的最小宽度，允许在小屏幕缩小 */
+  /* min-width: 260px; */ 
   height: 700px;
   border-radius: 12px;
   overflow: hidden;

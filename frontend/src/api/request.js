@@ -3,7 +3,7 @@ import axios from "axios";
 // 创建axios实例
 const service = axios.create({
   baseURL: "http://localhost:8000/api/", // 改回8000端口
-  timeout: 15000,
+  timeout: 60000,
 });
 
 // 请求拦截器

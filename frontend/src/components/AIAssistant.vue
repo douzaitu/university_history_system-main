@@ -4,14 +4,12 @@
     ref="assistantRef"
     @mousedown="startDrag"
     @touchstart="startDrag"
-    style="cursor: move"
   >
     <!-- 悬浮按钮 -->
     <div class="assistant-container">
       <button
         class="assistant-btn"
         @click="handleButtonClick"
-        style="cursor: pointer"
       >
         <img src="/logo.svg" alt="成都理工大学" class="logo-icon" />
       </button>
@@ -40,7 +38,11 @@
             alt="成都理工大学"
             class="message-logo"
           />
-          <span class="message-content">{{ message.content }}</span>
+          <!-- 使用 v-html 渲染格式化后的内容 -->
+          <span 
+            class="message-content" 
+            v-html="formatMessage(message.content)"
+          ></span>
         </div>
 
         <div v-if="loading" class="message ai loading">
@@ -137,9 +139,15 @@ const sendMessage = async () => {
     });
   } catch (error) {
     console.error("AI助手请求失败:", error);
+    let errorMsg = "抱歉，我遇到了点问题。请稍后再试。";
+    if (error.response && error.response.data && error.response.data.answer) {
+      errorMsg = error.response.data.answer;
+    } else if (error.message) {
+      errorMsg += ` (${error.message})`;
+    }
     messages.value.push({
       role: "ai",
-      content: "抱歉，我遇到了点问题。请稍后再试。",
+      content: errorMsg,
     });
   } finally {
     loading.value = false;
@@ -161,6 +169,45 @@ watch(messages, scrollToBottom, { deep: true });
 
 // 拖拽开始
 const startDrag = (e) => {
+  const target = e.target;
+  
+  // 检查是否是交互元素（输入框、按钮等）
+  // 注意：悬浮球(.assistant-btn)虽然是按钮，但是它是拖拽手柄，需要特殊处理
+  const isInteractive = 
+    target.tagName === "INPUT" || 
+    target.tagName === "TEXTAREA" || 
+    target.tagName === "BUTTON" || 
+    target.closest("button");
+
+  // 定义可拖拽区域
+  const isFloatingBtn = target.closest(".assistant-btn");
+  const isHeader = target.closest(".chat-header");
+  const isFooter = target.closest(".chat-input");
+
+  // 判定逻辑
+  let allowDrag = false;
+
+  if (isFloatingBtn) {
+    // 悬浮球允许拖拽
+    allowDrag = true;
+  } else if (isHeader) {
+    // 头部：排除关闭按钮和其他交互元素
+    if (!target.closest(".close-btn") && !target.closest("button")) {
+      allowDrag = true;
+    }
+  } else if (isFooter) {
+    // 底部：排除输入框和按钮
+    if (!isInteractive) {
+      allowDrag = true;
+    }
+  }
+
+  // 如果不允许拖拽，直接返回，保持默认行为（通过输入、选择文本等）
+  if (!allowDrag) {
+    return;
+  }
+
+  // 以下是拖拽逻辑...
   isDragging.value = true;
   hasDragged.value = false;
 
@@ -176,7 +223,7 @@ const startDrag = (e) => {
   offsetX.value = clientX - rect.left;
   offsetY.value = clientY - rect.top;
 
-  // 防止默认行为
+  // 防止默认行为（仅在确实拖拽时）
   e.preventDefault();
 };
 
@@ -221,6 +268,31 @@ const stopDrag = () => {
   setTimeout(() => {
     hasDragged.value = false;
   }, 100);
+};
+
+// 格式化消息内容（Markdown -> HTML）
+const formatMessage = (content) => {
+  if (!content) return "";
+  
+  // 1. 转义 HTML 特殊字符（防止 XSS）
+  let text = content
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  // 2. 加粗: **text**
+  text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+  // 3. 标题: ### text
+  text = text.replace(/^###\s+(.*$)/gm, '<h3 style="margin: 10px 0 5px; font-size: 16px;">$1</h3>');
+
+  // 4. 列表项: - text 或 * text
+  text = text.replace(/^[\-\*]\s+(.*$)/gm, '• $1');
+  
+  // 5. 将链接显示出来（可选，如有需要）
+  // text = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+
+  return text;
 };
 
 // 按钮点击处理
@@ -285,12 +357,16 @@ onUnmounted(() => {
   border: 2px solid #e8e8e8;
   color: #4c8bf5;
   font-size: 24px;
-  cursor: pointer;
+  cursor: grab; /* 移动光标 */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.assistant-btn:active {
+  cursor: grabbing;
 }
 
 .assistant-btn:hover {
@@ -317,6 +393,7 @@ onUnmounted(() => {
   overflow: hidden;
   animation: slideIn 0.3s ease-out;
   transition: all 0.3s ease;
+  cursor: default; /* 恢复默认光标 */
 }
 
 .chat-window:hover {
@@ -345,6 +422,11 @@ onUnmounted(() => {
   border-bottom: 1px solid #e8e8e8;
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
+  cursor: grab; /* 顶部拖拽手柄 */
+}
+
+.chat-header:active {
+   cursor: grabbing;
 }
 
 .header-content {
@@ -424,6 +506,7 @@ onUnmounted(() => {
   padding: 20px;
   overflow-y: auto;
   background: #f0f8ff;
+  cursor: text; /* 内容区域使用输入光标 */
 }
 
 .message {
@@ -455,8 +538,9 @@ onUnmounted(() => {
   padding: 14px 18px;
   border-radius: 20px;
   max-width: 80%;
-  line-height: 1.5;
+  line-height: 1.6;
   word-wrap: break-word;
+  white-space: pre-wrap; /* 允许换行 */
   font-family: "Microsoft YaHei", sans-serif;
   font-size: 14px;
   transition: all 0.3s ease;
@@ -489,6 +573,20 @@ onUnmounted(() => {
   border: 1px solid #f0f0f0;
   border-bottom-left-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* 消息内容中的加粗样式 */
+.message-content :deep(strong) {
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+/* 标题样式 */
+.message-content :deep(h3) {
+  margin: 10px 0 5px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #4c8bf5;
 }
 
 .message.loading .message-content {
@@ -530,6 +628,11 @@ onUnmounted(() => {
   gap: 10px;
   border-bottom-left-radius: 20px;
   border-bottom-right-radius: 20px;
+  cursor: grab; /* 底部拖拽区域 */
+}
+
+.chat-input:active {
+  cursor: grabbing;
 }
 
 .chat-input input {
@@ -543,6 +646,7 @@ onUnmounted(() => {
   font-family: "Microsoft YaHei", sans-serif;
   background: white;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  cursor: text; /* 输入框内使用文本光标 */
 }
 
 .chat-input input:hover {
@@ -557,6 +661,27 @@ onUnmounted(() => {
   box-shadow:
     inset 0 1px 3px rgba(0, 0, 0, 0.05),
     0 0 0 2px rgba(76, 139, 245, 0.1);
+}
+
+.chat-input button {
+  background: none;
+  border: none;
+  color: #4c8bf5;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 10px;
+  transition: transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-input button:hover {
+  transform: scale(1.1);
+}
+
+.chat-input button:active {
+  transform: scale(0.95);
 }
 
 .chat-input input::placeholder {
