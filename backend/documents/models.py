@@ -18,7 +18,6 @@ class Document(models.Model):
     
     # 新增：文档内容分类（决定提取的主要实体类型）
     CONTENT_CATEGORY_CHOICES = [
-        ('general', '通用文档'), # 默认，不特殊标记任何实体
         ('person', '人物档案'),
         ('event', '校史事件'),
         ('organization', '机构介绍'),
@@ -38,7 +37,7 @@ class Document(models.Model):
     file = models.FileField(upload_to=document_upload_path, verbose_name="文件")
     file_type = models.CharField(max_length=10, choices=DOCUMENT_TYPES, verbose_name="文件类型")
     # 新增字段：文档内容分类
-    content_category = models.CharField(max_length=20, choices=CONTENT_CATEGORY_CHOICES, default='general', verbose_name="内容分类")
+    content_category = models.CharField(max_length=20, choices=CONTENT_CATEGORY_CHOICES, default='person', verbose_name="内容分类")
     
     uploader = models.ForeignKey(CustomUser, on_delete=models.CASCADE, verbose_name="上传者")
     upload_time = models.DateTimeField(auto_now_add=True, verbose_name="上传时间")

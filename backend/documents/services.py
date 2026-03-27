@@ -66,6 +66,10 @@ class DocumentProcessor:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
 
+        allowed_categories = {'person', 'location', 'event', 'organization', 'subject'}
+        if document.content_category not in allowed_categories:
+            raise ValueError(f"不支持的文档内容分类: {document.content_category}。仅支持人物、地点、事件、机构、学科。")
+
         ext = os.path.splitext(file_path)[1].lower()
         images_map = {}
         texts = []
@@ -94,98 +98,25 @@ class DocumentProcessor:
         
         # 3. 逐行处理
         for item in texts:
-            # 使用 LLM 从原始文本中提取核心实体信息
+            # 从原始文本中提取核心实体信息
             raw_text = item['raw_text']
             # 通用索引（不仅是 excel_row，可能是 page_i, p_i 等）
             index_key = item.get('excel_row_index') or item.get('index') 
             
-            # --- 优化策略 1: 预提取优先 ---
-            # 如果 Excel 解析阶段已经通过列名识别出了名字，就不需要再调用 LLM 了
-            # 这对于大规模 Excel 数据导入能极大提高速度 (数小时 -> 几分钟)
+            pre_extracted = item.get('pre_extracted', {})
             entity_name = ""
             description = ""
-            
-            pre_extracted = item.get('pre_extracted', {})
+
+            # Excel：优先复用预提取的姓名/简介（直接使用文档内容）
             if pre_extracted.get('name'):
-                 entity_name = pre_extracted['name']
-                 # --- 优化描述文本 ---
-                 # 如果预提取了 description (来自简介列)，就直接用
-                 # 如果没有简介列，我们不能简单地用 raw_text (因为它包含了所有列名和值)
-                 # 我们尝试构建一个稍微干净点的描述，或者只用 raw_text 但去掉 name 部分
-                 if pre_extracted.get('description'):
-                    description = pre_extracted['description']
-                 else:
-                    # 如果没有简介列，我们不能用包含所有列名的 raw_text 直接作为描述
-                    # 策略：构建一个清洁的描述，排除掉"姓名/Name"列、"is_primary"等辅助列
-                    # 仅保留 meaningful content，并且尽量去除冗余的列名
-                    
-                    clean_parts = []
-                    # 获取当前 Excel 列名顺序
-                    # 为此我们需要 item 里带上 columns 信息，或者我们只能粗略地用正则去
-                    # 最好在 _read_excel 里生成一个 clean_text，这里我们简单处理：
-                    
-                    # 再次拆分 raw_text (它是用 "；" 连接的 "Key: Value")
-                    parts = raw_text.split("；")
-                    for p in parts:
-                        p = p.strip()
-                        if not p: continue
-                        
-                        # 检查这个 part 的 Key
-                        is_redundant = False
-                        
-                        # 1. 如果包含名字，跳过 (如 "姓名: 张三")
-                        name_keys = ['姓名', '教师姓名', '名称', 'Title', 'Name']
-                        for nk in name_keys:
-                            if p.startswith(nk + ":") or p.startswith(nk + "："):
-                                is_redundant = True
-                                break
-                        
-                        if is_redundant: continue
-
-                        # 2. 如果包含一些技术性列名，跳过
-                        skip_keys = ['Unnamed', 'Index', '序号', 'No.']
-                        for sk in skip_keys:
-                            if p.startswith(sk):
-                                is_redundant = True
-                                break
-                        
-                        if is_redundant: continue
-                        
-                        # 3. 尝试去除列名，只保留值?
-                        # 如果列名是很直观的（如"研究方向"），保留其实也好。
-                        # 我们可以检测，如果 Key 包含 "描述/简介/Content" 等，就去掉 Key
-                        if ":" in p or "：" in p:
-                            # 分割 Key Value
-                            # 注意：Value 里也可能包含冒号
-                            sep = "：" if "：" in p else ":"
-                            k, v = p.split(sep, 1)
-                            k = k.strip()
-                            v = v.strip()
-                            
-                            # 如果 Key 看起来像是描述性的，就只保留 Value
-                            if any(d in k for d in ['简介', '描述', '介绍', 'Content', 'About', 'Bio', 'Details', '详细', '内容']):
-                                clean_parts.append(v)
-                            else:
-                                # 其他属性，保留 Key: Value 格式，或者加个括号
-                                # 比如 "职称: 教授" -> "教授" ? 有点冒险，"教授"可能指别的
-                                # 保持 "职称: 教授" 比较稳妥，或者用 "Key为Value" 这种中文习惯?
-                                # 既然用户觉得 "列名: 值" 不好看，那我们试着针对特定列去掉 Key
-                                # 比如：职称、院系、学位
-                                if k in ['职称', '职务', '院系', '学院', '学位', '学历']:
-                                     clean_parts.append(v)
-                                else:
-                                     clean_parts.append(p)
-                        else:
-                            clean_parts.append(p)
-                    
-                    description = "，".join(clean_parts)
-
-                 # print(f"Optimized: Using pre-extracted name: {entity_name}")
+                entity_name = str(pre_extracted.get('name', '')).strip()
+                description = str(pre_extracted.get('description', '')).strip()
             else:
-                # 只有无法识别列名时才调用 LLM 进行非结构化提取
-                extracted_info = LLMBridge.extract_primary_entity_info(raw_text, document.content_category)
-                entity_name = extracted_info.get("name", "").strip()
-                description = extracted_info.get("description", "").strip()
+                # Word/PDF：按分块标记与原文规则提取，不调用大模型
+                entity_name, description = cls._extract_name_desc_from_chunk(raw_text)
+
+            # 统一规范：所有来源的实体名称都移除空白字符（空格/制表符/换行）
+            entity_name = cls._normalize_entity_name(entity_name)
             
             # --- 优化策略 2: 垃圾数据过滤 ---
             # 如果没提取到名字，可能这行数据无效，跳过
@@ -207,15 +138,10 @@ class DocumentProcessor:
                 'person': 'person',
                 'subject': 'subject'
             }
-            # 如果content_category不在map中，则回退到person，但这可能导致错误分类
             # 优先使用文档指定的类型
-            entity_type = category_type_map.get(document.content_category, 'person')
+            entity_type = category_type_map[document.content_category]
 
-            # 强制覆盖：如果用户指定了是“事件”文档，那么提取出来的实体必须是“事件”类型，
-            
-            # 只有当 entity_name 不为空才处理
-            if not entity_name:
-                continue
+            # 强制覆盖：如果用户指定了是“事件”文档，那么提取出来的实体必须是“事件”类型
 
             # --- 优化策略 3: 添加黑名单过滤 ---
             # 防止类似 "xxx学院" 或 "未提及" 被写入数据库
@@ -303,6 +229,41 @@ class DocumentProcessor:
             "triples_count": triples_count,
             "message": f"成功处理 {processed_count} 位导师数据，生成 {triples_count} 条关系。"
         }
+
+    @classmethod
+    def _normalize_entity_name(cls, name):
+        """统一实体名称格式：移除所有空白字符。"""
+        if not name:
+            return ""
+        return re.sub(r'\s+', '', str(name)).strip()
+
+    @classmethod
+    def _extract_name_desc_from_chunk(cls, raw_text):
+        """从 Word/PDF 分块文本提取实体名和简介，简介保持原文。"""
+        text = (raw_text or "").strip()
+        if not text:
+            return "", ""
+
+        lines = [line.rstrip() for line in text.splitlines() if line.strip()]
+        if not lines:
+            return "", ""
+
+        entity_name = ""
+        start_idx = 0
+
+        marker_match = re.match(r'^【实体名称：(.+?)】$', lines[0].strip())
+        if marker_match:
+            entity_name = marker_match.group(1).strip()
+            start_idx = 1
+            if start_idx < len(lines) and lines[start_idx].strip() == entity_name:
+                start_idx += 1
+        else:
+            # 兜底：第一行当作实体名
+            entity_name = lines[0].strip()
+            start_idx = 1
+
+        description = "\n".join(lines[start_idx:]).strip()
+        return entity_name, description
 
     @classmethod
     def _extract_images_from_excel(cls, file_path):
@@ -422,8 +383,6 @@ class DocumentProcessor:
                     pass
                 return False
 
-            has_headings = False
-
             # --- 遍历文档 Body ---
             # 兼容 python-docx 元素遍历
             for child in doc.element.body:
@@ -445,7 +404,6 @@ class DocumentProcessor:
                         if current_buffer:
                             flush_buffer()
                         
-                        has_headings = True
                         # 将标题作为新实体的第一行
                         # 添加特殊标记提示 LLM 这是名字
                         current_buffer.append(f"【实体名称：{text}】")
@@ -528,8 +486,6 @@ class DocumentProcessor:
                     # 因为 Python 的 list 是引用传递，clear 会导致之前已经 append 到 chunks 里的引用也被清空
                     current_buffer = []
 
-            has_headings = False
-            
             for page in doc:
                 # 获取页面上的字典格式文本块
                 blocks = page.get_text("dict")["blocks"]
@@ -567,7 +523,6 @@ class DocumentProcessor:
                             if current_buffer:
                                 flush_buffer()
                             
-                            has_headings = True
                             # 标记这是名字，帮助AI识别
                             current_buffer.append(f"【实体名称：{line_text}】")
                             current_buffer.append(line_text)
@@ -579,9 +534,6 @@ class DocumentProcessor:
             flush_buffer()
             
             return chunks
-        except Exception as e:
-            print(f"Read PDF error: {e}")
-            return []
         except Exception as e:
             print(f"Read PDF error: {e}")
             return []
@@ -610,7 +562,7 @@ class DocumentProcessor:
         return images_map
 
     @classmethod
-    def _read_excel(cls, file_path, category='general'):
+    def _read_excel(cls, file_path, category='person'):
         """读取Excel文件内容 - 通用版：不做列名匹配，只做文本合并"""
         try:
             # 优先使用 pandas 读取数据
@@ -627,8 +579,17 @@ class DocumentProcessor:
             name_col = None
             desc_cols = []
             
-            # 常见的姓名列名候选中
-            potential_name_cols = ['姓名', '教师姓名', '名称', '实体名称', 'Title', 'Name', 'Attribute', 'Entity']
+            # 名称列候选（按文档分类优先匹配，再回退通用字段）
+            category_name_cols = {
+                'person': ['姓名', '教师姓名', '人物名称'],
+                'location': ['地点名称', '建筑名称', '地名', '地点'],
+                'event': ['事件名称', '活动名称', '会议名称', '事件'],
+                'organization': ['机构名称', '组织名称', '单位名称', '学院名称', '院系名称'],
+                'subject': ['学科名称', '专业名称', '方向名称'],
+            }
+            # 严格匹配所选分类对应的列名，去除之前的通用名称兜底逻辑
+            potential_name_cols = category_name_cols.get(category, [])
+            
             # 常见的描述列名候选中
             potential_desc_cols = ['简介', '描述', 'Description', 'Bio', 'Introduction', 'Profile', '基本情况', '个人简介', '详细介绍', 'Content', 'About', '经历', 'Experience', '详细内容', 'Details']
             
@@ -747,32 +708,6 @@ class DocumentProcessor:
         except Exception as e:
             print(f"Read Excel error: {e}")
             raise e
-
-    @classmethod
-    def _read_excel_row_text(cls, row, columns):
-        """辅助函数：更干净地生成 Excel 行的文本描述"""
-        # 构建一个不带列名的纯文本描述，或者更加自然的描述
-        # 如果列名像 "姓名", "职称" 这种，其实带上也无妨，但不应该像 "姓名: 张三; 职称: 教授" 这种机械拼接
-        # 更好的方式：
-        # 张三，教授，xxx学院，研究方向：xxx。
-        
-        parts = []
-        skip_cols = ['姓名', '教师姓名', 'Name', 'Unnamed'] # 跳过名字列
-        
-        for col in columns:
-            if any(s in col for s in skip_cols):
-                continue
-                
-            val = str(row[col]).strip()
-            if val and val.lower() != 'nan':
-                # 如果是简介列，直接加值，不加列名
-                if '简介' in col or '描述' in col:
-                     parts.append(val)
-                # 其他列，加上列名作为前缀（如 “研究方向：AI”）
-                else:
-                     parts.append(f"{col}: {val}")
-        
-        return "；".join(parts)
 
     @classmethod
     def _generate_triples(cls, entity_dict, teacher_name):
