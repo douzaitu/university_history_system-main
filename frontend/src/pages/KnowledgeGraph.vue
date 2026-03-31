@@ -24,7 +24,7 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="输入教师姓名搜索知识图谱..."
+          placeholder="输入信息搜索知识图谱..."
           class="search-input"
           @input="handleSearchInput"
           @keyup.enter="searchTeacher"
@@ -75,7 +75,7 @@
 
       <!-- 初始状态 -->
       <div v-else-if="!currentTeacher" class="graph-initial">
-        <p>请输入教师姓名搜索知识图谱</p>
+        <p>请输入想查找的信息搜索知识图谱</p>
       </div>
     </div>
 
