@@ -41,6 +41,10 @@
             <span class="label">类别</span
             ><span class="value">{{ organization.category }}</span>
           </div>
+          <div class="field" v-if="organization.subtype">
+            <span class="label">细分类别</span
+            ><span class="value">{{ organization.subtype }}</span>
+          </div>
           <div class="bio">
             <div class="label">简介</div>
             <p class="text">{{ organization.desc }}</p>
@@ -102,7 +106,8 @@ const fetchOrganizationDetail = async (id) => {
       organization.value = {
         id: response.id,
         name: response.name,
-        category: response.entity_type,
+        category: response.entity_type_display || response.entity_type,
+          subtype: response.subtype,
         desc: response.description,
         photo: response.photo_url || "/Organizations/default.jpg",
         readCount: 0,

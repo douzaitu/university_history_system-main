@@ -3,12 +3,14 @@ from .models import Entity, Relationship
 
 # 实体相关的序列化器
 class EntitySerializer(serializers.ModelSerializer):
+    entity_type_display = serializers.CharField(source='get_entity_type_display', read_only=True)
+
     # 使用 serializers.SerializerMethodField 构建完整的图片 URL
     photo_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Entity
-        fields = ['id', 'name', 'entity_type', 'description', 'photo_url', 'source_documents', 'subtype']
+        fields = ['id', 'name', 'entity_type', 'entity_type_display', 'description', 'photo_url', 'source_documents', 'subtype']
 
     def get_photo_url(self, obj):
         if not obj.photo:
@@ -30,13 +32,15 @@ class EntitySerializer(serializers.ModelSerializer):
         return path
 
 class EntitySearchSerializer(serializers.ModelSerializer):
+    entity_type_display = serializers.CharField(source='get_entity_type_display', read_only=True)
+
     """实体搜索序列化器"""
     document_count = serializers.SerializerMethodField()
     photo_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Entity
-        fields = ['id', 'name', 'entity_type', 'description', 'photo_url', 'document_count']  # 确保有photo_url
+        fields = ['id', 'name', 'entity_type', 'entity_type_display', 'description', 'photo_url', 'document_count']  # 确保有photo_url
     
     def get_document_count(self, obj):
         """获取关联的文档数量"""

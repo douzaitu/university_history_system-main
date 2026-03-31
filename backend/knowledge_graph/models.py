@@ -19,8 +19,8 @@ class Entity(models.Model):
 
     # 也可以手动上传本地图片
     image = models.ImageField(upload_to='entity_photos/', blank=True, null=True, verbose_name="上传照片")
-    # 旧字段保留，用于兼容网络图片或自动抓取的路径
-    photo_url = models.URLField(blank=True, verbose_name="网络照片URL")
+    # 旧字段保留，改为 CharField 取代 URLField 以防止管理后台强校验报错，兼容相对路径和绝对路径
+    photo_url = models.CharField(max_length=1000, blank=True, verbose_name="网络照片URL(或路径)")
     
     # 新增：是否为核心实体（用于前端列表展示筛选）
     # True: 在对应类型的列表页显示（如“人物库”）

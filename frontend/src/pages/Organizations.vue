@@ -473,7 +473,7 @@ const fetchOrganizationsData = async () => {
     organizationsData.value = response.map((entity) => ({
       id: entity.id,
       name: entity.name,
-      category: entity.entity_type,
+      category: entity.entity_type_display || entity.entity_type,
       desc: entity.description,
       photo: entity.photo_url || "/Organizations/default.jpg", // 默认图片，后续可以从实体属性中获取
       readCount: 0, // 阅读量，后续可以从实体属性中获取
@@ -514,7 +514,7 @@ const handleSearch = async () => {
         .map((entity) => ({
           id: entity.id,
           name: entity.name,
-          category: entity.entity_type,
+          category: entity.entity_type_display || entity.entity_type,
           desc: entity.description,
           photo: entity.photo_url || "/Organizations/default.jpg",
           readCount: 0,

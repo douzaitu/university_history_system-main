@@ -166,9 +166,10 @@ class DocumentProcessor:
             if index_key in images_map:
                 try:
                     # 使用新的 save_image_file 方法，它接受 bytes
-                    photo_url = cls.save_image_file(images_map[index_key], entity_name, index_key)
-                    if photo_url:
-                        update_defaults['photo_url'] = photo_url
+                    photo_path = cls.save_image_file(images_map[index_key], entity_name, index_key)
+                    if photo_path:
+                        # 核心修改：将提取的本地文件路径存入 image 字段，而不是 photo_url
+                        update_defaults['image'] = photo_path
                 except Exception as e:
                     print(f"Image save failed for {entity_name}: {e}")
             

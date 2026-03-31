@@ -274,7 +274,7 @@ const renderGraph = async () => {
           // 强制所有节点使用圆形
           const symbolType = "circle";
           const symbolSize = nodeSize;
-          
+
           return {
             id: String(node.id),
             name: node.label,
@@ -332,21 +332,25 @@ const renderGraph = async () => {
         links: graphData.value.edges.map((edge) => {
           // 根据关系类型设置不同颜色
           const edgeColors = {
-            "毕业于": "#1890ff",
-            "任职于": "#52c41a",
-            "研究方向": "#fa8c16",
-            "发表论文": "#f5222d",
-            "获得奖项": "#722ed1",
-            "指导学生": "#13c2c2",
-            "合作项目": "#eb2f96",
+            毕业于: "#1890ff",
+            任职于: "#52c41a",
+            研究方向: "#fa8c16",
+            发表论文: "#f5222d",
+            获得奖项: "#722ed1",
+            指导学生: "#13c2c2",
+            合作项目: "#eb2f96",
             default: "#8c8c8c",
           };
-          
+
           return {
             source: String(edge.source),
             target: String(edge.target),
-            sourceName: graphData.value.nodes.find((n) => n.id === edge.source)?.label || "",
-            targetName: graphData.value.nodes.find((n) => n.id === edge.target)?.label || "",
+            sourceName:
+              graphData.value.nodes.find((n) => n.id === edge.source)?.label ||
+              "",
+            targetName:
+              graphData.value.nodes.find((n) => n.id === edge.target)?.label ||
+              "",
             label: edge.label,
             lineStyle: {
               color: edgeColors[edge.label] || edgeColors.default,

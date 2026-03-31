@@ -42,6 +42,10 @@
             <span class="label">类别</span
             ><span class="value">{{ place.category }}</span>
           </div>
+          <div class="field" v-if="place.subtype">
+            <span class="label">细分类别</span
+            ><span class="value">{{ place.subtype }}</span>
+          </div>
           <div class="bio">
             <div class="label">简介</div>
             <p class="text">{{ place.desc }}</p>
@@ -107,7 +111,8 @@ const fetchPlaceDetail = async (id) => {
       place.value = {
         id: response.id,
         name: response.name,
-        category: response.entity_type,
+        category: response.entity_type_display || response.entity_type,
+          subtype: response.subtype,
         desc: response.description,
         photo: response.photo_url || "/Places/default.jpg",
         readCount: 0,
